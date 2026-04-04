@@ -26,7 +26,7 @@ import {
 function Hero({ imageSrc }: { imageSrc: string }) {
   return (
     <section
-      className="relative z-0 flex min-h-dvh w-full shrink-0 flex-col justify-end bg-zinc-950 pb-[env(safe-area-inset-bottom,0px)] text-zinc-100"
+      className="relative z-0 flex min-h-[100svh] w-full shrink-0 flex-col justify-end bg-zinc-950 pb-[env(safe-area-inset-bottom,0px)] text-zinc-100 sm:min-h-dvh"
       aria-label="Introduction"
     >
       <div className="pointer-events-none absolute inset-0 z-0">
@@ -121,9 +121,12 @@ const RECENT_PIECES_GRID = [
   },
 ] as const;
 
-/** Overlap into hero; bottom padding stays moderate — next block adds its own top padding. */
+/**
+ * First block after hero: on mobile, no negative margin — overlap was pulling the gallery into the first
+ * viewport on iPhone. Desktop keeps the intentional overlap into the hero.
+ */
 const HOME_FIRST_AFTER_HERO =
-  "relative z-10 px-6 -mt-16 pt-20 pb-16 sm:-mt-20 sm:px-10 sm:pt-24 sm:pb-[4.5rem] lg:px-16 lg:pb-20";
+  "relative z-10 mt-0 px-6 pt-20 pb-16 sm:-mt-20 sm:px-10 sm:pt-24 sm:pb-[4.5rem] lg:px-16 lg:pb-20";
 /** One rhythm for all editorial stacks on home (avoids py-12 + py-12 feeling too loose). */
 const HOME_EDITORIAL_SECTION = "px-6 py-9 sm:px-10 sm:py-10 lg:px-16 lg:py-10";
 /** Strip before Work — same vertical scale as sections */
