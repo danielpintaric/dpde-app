@@ -5,7 +5,12 @@ import {
   editorialImage,
   editorialImageOverlay,
   focusRing,
+  linkFocusVisible,
+  pageContentShell,
   stackTitleToBody,
+  tapSoft,
+  transitionColorsQuick,
+  transitionQuick,
   typeBodyMuted,
   typeH1Page,
   typeH2Section,
@@ -26,7 +31,7 @@ export default function PortfolioPage() {
 
   return (
     <PageMain>
-      <div className="px-6 pb-20 pt-28 sm:px-10 lg:px-16 lg:pb-28 lg:pt-28">
+      <div className={pageContentShell}>
         <div className="mx-auto max-w-7xl">
           <h1 className={typeH1Page}>Work</h1>
           <p className={`${stackTitleToBody} max-w-xl ${typeBodyMuted}`}>
@@ -35,7 +40,7 @@ export default function PortfolioPage() {
           </p>
 
           <div
-            className="mt-12 flex flex-wrap gap-x-3 gap-y-2 border-b border-zinc-800/50 pb-10"
+            className="mt-14 flex flex-wrap gap-x-3 gap-y-2 border-b border-zinc-800/40 pb-12"
             role="group"
             aria-label="Categories (filter coming soon)"
           >
@@ -43,19 +48,19 @@ export default function PortfolioPage() {
               <button
                 key={label}
                 type="button"
-                className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-[0.24em] text-zinc-500 transition duration-300 ease-out hover:text-zinc-400"
+                className={`cursor-pointer rounded-sm px-2 py-1.5 text-[10px] font-medium uppercase tracking-[0.24em] text-zinc-500 ${transitionQuick} hover:text-zinc-400 ${tapSoft} ${linkFocusVisible}`}
               >
                 {label}
               </button>
             ))}
           </div>
 
-          <ul className="mt-12 grid grid-cols-1 gap-x-10 gap-y-14 sm:grid-cols-2 lg:mt-16 lg:gap-x-12 lg:gap-y-20">
+          <ul className="mt-14 grid grid-cols-1 gap-x-10 gap-y-14 sm:grid-cols-2 lg:mt-20 lg:gap-x-12 lg:gap-y-20">
             {projects.map((project, i) => (
               <li key={project.slug} className={i % 2 === 1 ? "sm:mt-6 lg:mt-10" : ""}>
                 <Link
                   href={`/portfolio/${project.slug}`}
-                  className={`group block ${focusRing}`}
+                  className={`group block cursor-pointer ${focusRing}`}
                 >
                   <div className="relative overflow-hidden bg-zinc-900">
                     <div className="relative aspect-[4/5] w-full sm:aspect-[3/4]">
@@ -70,7 +75,11 @@ export default function PortfolioPage() {
                     </div>
                   </div>
                   <div className="mt-5 flex flex-col gap-1 sm:mt-6 sm:flex-row sm:items-baseline sm:justify-between">
-                    <h2 className={`${typeH2Section} text-xl sm:text-2xl`}>{project.title}</h2>
+                    <h2
+                      className={`${typeH2Section} text-xl ${transitionColorsQuick} sm:text-2xl group-hover:text-zinc-100/88`}
+                    >
+                      {project.title}
+                    </h2>
                     <p className={typeMeta}>
                       {project.category}
                       <span className="mx-2 text-zinc-700">·</span>

@@ -453,6 +453,18 @@ export function getProjectBySlug(slug: string): PortfolioProject | undefined {
   return PORTFOLIO_PROJECTS.find((p) => p.slug === slug);
 }
 
+/**
+ * Images for the detail gallery: skips the first entry when it matches `coverImage`
+ * (the hero already shows the cover; avoids a duplicated lead frame).
+ */
+export function getPortfolioBodyImages(project: PortfolioProject): ProjectImage[] {
+  const { images, coverImage } = project;
+  if (images.length === 0) return [];
+  const [head, ...tail] = images;
+  if (head.src === coverImage) return tail;
+  return images;
+}
+
 export function getAdjacentProjects(slug: string): {
   prev: PortfolioProject | null;
   next: PortfolioProject | null;

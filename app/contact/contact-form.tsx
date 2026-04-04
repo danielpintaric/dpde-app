@@ -1,12 +1,55 @@
 "use client";
 
+import { useState } from "react";
+import { linkFocusVisible, tapSoft, transitionQuick } from "@/lib/editorial";
+
 export function ContactForm() {
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState<"idle" | "ok" | "err">("idle");
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setStatus("idle");
+    setStatusMessage(null);
+
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: String(fd.get("name") ?? ""),
+          email: String(fd.get("email") ?? ""),
+          project: String(fd.get("project") ?? ""),
+          message: String(fd.get("message") ?? ""),
+        }),
+      });
+
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+
+      if (!res.ok) {
+        setStatus("err");
+        setStatusMessage(data.error ?? "Could not send.");
+        return;
+      }
+
+      setStatus("ok");
+      setStatusMessage(null);
+      form.reset();
+    } catch {
+      setStatus("err");
+      setStatusMessage("Network error. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  const fieldClass =
-    "w-full border-0 border-b border-zinc-800/80 bg-transparent py-4 text-[13px] font-light tracking-[0.02em] text-zinc-300 outline-none transition duration-300 ease-out placeholder:text-zinc-600 focus:border-zinc-500/50";
+  const fieldClass = `w-full border-0 border-b border-zinc-800/80 bg-transparent py-4 text-[13px] font-light tracking-[0.02em] text-zinc-300 outline-none ${transitionQuick} placeholder:text-zinc-600/90 focus:border-zinc-400/55 focus-visible:border-zinc-400/60 ${linkFocusVisible}`;
 
   const labelClass =
     "block text-[10px] font-medium uppercase tracking-[0.28em] text-zinc-500/90";
@@ -52,10 +95,21 @@ export function ContactForm() {
       </div>
       <button
         type="submit"
-        className="pt-1 text-[11px] font-normal tracking-[0.1em] text-zinc-400 underline decoration-zinc-600/40 underline-offset-[10px] transition duration-300 ease-out hover:text-zinc-200 hover:decoration-zinc-500/50"
+        disabled={isSubmitting}
+        className={`cursor-pointer pt-1 text-[11px] font-normal tracking-[0.1em] text-zinc-400 underline decoration-zinc-600/40 underline-offset-[10px] ${transitionQuick} hover:text-zinc-200 hover:decoration-zinc-500/55 disabled:cursor-not-allowed disabled:opacity-45 ${linkFocusVisible} ${tapSoft}`}
       >
         Write the studio
       </button>
+      {status === "err" && statusMessage ? (
+        <p className="text-[12px] font-light tracking-[0.02em] text-zinc-600" role="alert">
+          {statusMessage}
+        </p>
+      ) : null}
+      {status === "ok" ? (
+        <p className="text-[12px] font-light tracking-[0.02em] text-zinc-600" role="status">
+          Sent.
+        </p>
+      ) : null}
     </form>
   );
 }

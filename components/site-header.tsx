@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { linkFocusVisible, transitionNav, transitionQuick, transitionShell, tapSoft } from "@/lib/editorial";
 
 const NAV = [
   { href: "/portfolio", label: "Work" },
@@ -35,10 +36,10 @@ function NavLinks({
             <Link
               href={href}
               onClick={onNavigate}
-              className={`text-[12px] font-normal tracking-[0.07em] transition duration-300 ease-out ${
+              className={`text-[12px] font-normal tracking-[0.07em] ${transitionNav} ${linkFocusVisible} ${tapSoft} ${
                 active
-                  ? "text-zinc-300 underline decoration-zinc-500/25 underline-offset-[7px]"
-                  : "text-zinc-500 hover:text-zinc-400"
+                  ? "text-zinc-400/95 underline decoration-zinc-500/25 underline-offset-[7px]"
+                  : "text-zinc-500/95 hover:text-zinc-400/90 hover:underline hover:decoration-zinc-600/28 hover:underline-offset-[8px]"
               }`}
               aria-current={active ? "page" : undefined}
             >
@@ -82,7 +83,7 @@ export function SiteHeader() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-[background-color,backdrop-filter,border-color] duration-500 ease-out ${
+      className={`fixed inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top,0px)] ${transitionShell} ${
         scrolled || menuOpen
           ? "border-b border-zinc-800/60 bg-zinc-950/88 backdrop-blur-xl"
           : "border-b border-transparent bg-zinc-950/25 backdrop-blur-[2px]"
@@ -92,7 +93,7 @@ export function SiteHeader() {
         <div className="mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between sm:h-20">
           <Link
             href="/"
-            className={`shrink-0 font-serif text-[1.125rem] font-normal leading-none tracking-[-0.03em] text-zinc-100 transition-[opacity,transform] duration-500 ease-out hover:opacity-[0.88] sm:text-[1.25rem] ${
+            className={`shrink-0 font-serif text-[1.125rem] font-normal leading-none tracking-[-0.03em] text-zinc-100 transition-[opacity,transform] duration-[300ms] ease-out hover:opacity-[0.92] ${linkFocusVisible} sm:text-[1.25rem] ${
               showLogo ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-0.5 opacity-0"
             }`}
             tabIndex={showLogo ? undefined : -1}
@@ -107,7 +108,7 @@ export function SiteHeader() {
           <div className="flex items-center md:hidden">
             <button
               type="button"
-              className="text-[10px] font-medium uppercase tracking-[0.26em] text-zinc-500 transition duration-300 ease-out hover:text-zinc-400"
+              className={`-mr-1 flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-end rounded-sm px-2 text-[11px] font-medium uppercase tracking-[0.28em] text-zinc-400/95 ${transitionNav} hover:text-zinc-300/95 ${tapSoft} ${linkFocusVisible}`}
               onClick={() => setMenuOpen((o) => !o)}
               aria-expanded={menuOpen}
               aria-controls="mobile-nav"
@@ -121,7 +122,7 @@ export function SiteHeader() {
       {menuOpen ? (
         <div
           id="mobile-nav"
-          className="border-b border-zinc-800/50 bg-zinc-950/94 px-6 py-10 backdrop-blur-xl sm:px-10 lg:px-16 md:hidden"
+          className="border-b border-zinc-800/50 bg-zinc-950/94 px-6 pb-10 pt-6 backdrop-blur-xl sm:px-10 lg:px-16 md:hidden"
         >
           <nav className="mx-auto w-full max-w-7xl" aria-label="Main mobile">
             <NavLinks

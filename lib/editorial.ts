@@ -6,9 +6,37 @@
 export const focusRing =
   "outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950";
 
-/** Linkable / hoverable image blocks */
+/** Short UI / inline links (inputs, CTAs, chrome) */
+export const transitionQuick = "transition duration-[170ms] ease-out";
+
+/** Text color shifts (group-hover labels, meta lines) */
+export const transitionColorsQuick = "transition-colors duration-[170ms] ease-out";
+
+/**
+ * Primary navigation — editorial, soft (color/underline ease, no snap).
+ * Slightly longer ease-out step reads calmer than generic `transition`.
+ */
+export const transitionNav =
+  "transition-[color,opacity,text-decoration-color,text-underline-offset] duration-[175ms] ease-out";
+
+/** Gallery trigger wrapper — transform timing in sync with `editorialImage` (no extra hover layers) */
+export const transitionImageHover =
+  "transition-transform duration-[550ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
+
+/** Header / shell morphs — calm fade band */
+export const transitionShell =
+  "transition-[background-color,backdrop-filter,border-color] duration-[300ms] ease-out";
+
+/** Inline & nav links — keyboard focus without loud box */
+export const linkFocusVisible =
+  "rounded-sm outline-none focus-visible:ring-1 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950";
+
+/** Subtle tap feedback (links, text buttons) */
+export const tapSoft = "active:opacity-[0.9]";
+
+/** Linkable / hoverable image blocks — transform-only hover, soft attack, gradual ease */
 export const editorialImage =
-  "object-cover brightness-[0.97] contrast-[1.02] transition duration-300 ease-out group-hover:scale-[1.015] group-hover:opacity-[0.94]";
+  "object-cover brightness-[0.97] contrast-[1.02] transition-transform duration-[550ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]";
 
 /** Hero or static leads — same tone, no hover */
 export const editorialImageTone =
@@ -18,6 +46,9 @@ export const editorialImageOverlay =
   "pointer-events-none absolute inset-0 bg-zinc-950/[0.07]";
 
 export const editorialFrame = `group relative block overflow-hidden bg-zinc-900 ${focusRing}`;
+
+/** Same as `editorialFrame` but signals pointer affordance on desktop */
+export const editorialFrameInteractive = `${editorialFrame} cursor-pointer`;
 
 export const typeMeta =
   "text-[10px] font-medium uppercase tracking-[0.32em] text-zinc-500";
@@ -54,3 +85,10 @@ export const stackTitleToBody = "mt-6";
 /** Section vertical padding */
 export const sectionNormal = "py-20";
 export const sectionMajor = "py-28";
+
+/**
+ * Standard inner page: aligns with header/footer gutters and lands calmly before the footer.
+ * Use for About, Work, Contact, Client (project detail uses the same pt/pb on `<article>`).
+ */
+export const pageContentShell =
+  "px-6 pb-24 pt-28 sm:px-10 sm:pb-28 sm:pt-28 lg:px-16 lg:pb-32 lg:pt-28";

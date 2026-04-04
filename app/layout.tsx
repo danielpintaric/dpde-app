@@ -1,7 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { SiteFooter } from "@/components/site-chrome";
 import { SiteHeader } from "@/components/site-header";
+import { PageTransition } from "@/components/page-transition";
+import { getMetadataBaseUrl, getPublicConfig } from "@/lib/public-config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -21,13 +23,21 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
+const { brandName } = getPublicConfig();
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
+  metadataBase: getMetadataBaseUrl(),
   title: {
-    default: "Daniel Pintarić — Photography",
-    template: "%s — Daniel Pintarić",
+    default: `${brandName} — Photography`,
+    template: `%s — ${brandName}`,
   },
-  description:
-    "Portrait and editorial photography — Daniel Pintarić, Berlin. Commissions and collaborations by availability.",
+  description: `Portrait and editorial photography — ${brandName}, Berlin. Commissions and collaborations by availability.`,
 };
 
 export default function RootLayout({
@@ -42,7 +52,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-dvh flex-col bg-zinc-950 font-sans text-zinc-100">
         <SiteHeader />
-        <div className="flex flex-1 flex-col">{children}</div>
+        <PageTransition>{children}</PageTransition>
         <SiteFooter />
       </body>
     </html>

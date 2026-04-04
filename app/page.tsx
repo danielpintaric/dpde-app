@@ -1,10 +1,14 @@
 import Link from "next/link";
 import {
   editorialFrame,
+  editorialFrameInteractive,
   editorialImage,
   editorialImageOverlay,
+  linkFocusVisible,
   stackMetaToTitle,
   stackTitleToBody,
+  tapSoft,
+  transitionQuick,
   typeBody,
   typeH1Hero,
   typeH2Large,
@@ -22,52 +26,55 @@ import {
 function Hero({ imageSrc }: { imageSrc: string }) {
   return (
     <section
-      className="relative z-0 flex min-h-dvh w-full shrink-0 flex-col justify-end bg-zinc-950 text-zinc-100"
+      className="relative z-0 flex min-h-dvh w-full shrink-0 flex-col justify-end bg-zinc-950 pb-[env(safe-area-inset-bottom,0px)] text-zinc-100"
       aria-label="Introduction"
     >
       <div className="pointer-events-none absolute inset-0 z-0">
         <img
           src={imageSrc}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover object-[center_42%] brightness-[0.88] contrast-[1.06]"
+          className="absolute inset-0 h-full w-full object-cover object-[center_42%] brightness-[0.92] contrast-[1.04] sm:brightness-[0.88] sm:contrast-[1.06]"
           sizes="100vw"
           fetchPriority="high"
         />
-        <div className="pointer-events-none absolute inset-0 bg-zinc-950/[0.12]" aria-hidden />
+        <div
+          className="pointer-events-none absolute inset-0 bg-zinc-950/[0.07] sm:bg-zinc-950/[0.12]"
+          aria-hidden
+        />
       </div>
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/82 to-zinc-950/45"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/68 to-zinc-950/34 sm:via-zinc-950/82 sm:to-zinc-950/45"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/78 via-black/32 to-black/15 sm:from-black/72 sm:via-black/28 sm:to-black/5"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/54 via-black/18 to-black/8 sm:from-black/72 sm:via-black/28 sm:to-black/5"
         aria-hidden
       />
       {/* Exit fade — bottom ~25%: scene hand-off into body */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-[25%] min-h-[5.5rem] max-h-[min(30dvh,26rem)] bg-gradient-to-t from-zinc-950 via-zinc-950/55 to-transparent sm:h-[28%]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-[25%] min-h-[5.5rem] max-h-[min(30dvh,26rem)] bg-gradient-to-t from-zinc-950 via-zinc-950/42 to-transparent sm:h-[28%] sm:via-zinc-950/55"
         aria-hidden
       />
 
-      <div className="relative z-10 w-full px-6 pb-14 pt-[5.5rem] sm:px-10 sm:pb-16 sm:pt-24 lg:px-16 lg:pb-20">
+      <div className="relative z-10 w-full px-6 pb-24 pt-[calc(4.75rem+env(safe-area-inset-top,0px))] sm:px-10 sm:pb-16 sm:pt-24 lg:px-16 lg:pb-20">
         <div className="mx-auto w-full max-w-7xl">
-          <div className="max-w-lg">
+          <div className="max-w-lg max-sm:translate-y-[-2vh]">
             <h1 className={typeH1Hero}>Daniel Pintarić</h1>
-            <p className={`mt-5 max-w-md sm:mt-6 ${typeBody}`}>
+            <p className={`mt-4 max-w-md sm:mt-6 ${typeBody}`}>
               Portrait and editorial work, Berlin — spare daylight, long tonal range, print as the first
               verdict. Travel when the brief warrants the distance.
             </p>
-            <p className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-normal tracking-[0.06em] text-zinc-500 sm:mt-10">
+            <p className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-normal tracking-[0.06em] sm:mt-10 sm:gap-x-3 sm:gap-y-1">
               <Link
                 href="/portfolio"
-                className="text-zinc-500 underline decoration-zinc-600/40 underline-offset-[7px] transition duration-300 ease-out hover:text-zinc-400 hover:decoration-zinc-500/50"
+                className={`text-zinc-200 underline decoration-zinc-400/55 underline-offset-[8px] ${transitionQuick} hover:text-zinc-50 hover:decoration-zinc-300/50 sm:text-zinc-500 sm:decoration-zinc-600/40 sm:underline-offset-[7px] sm:hover:text-zinc-400 sm:hover:decoration-zinc-500/50 ${linkFocusVisible} ${tapSoft}`}
               >
                 View work
               </Link>
-              <span className="text-zinc-700">·</span>
+              <span className="text-zinc-600 sm:text-zinc-700">·</span>
               <Link
                 href="/contact"
-                className="text-zinc-500 underline decoration-zinc-600/40 underline-offset-[7px] transition duration-300 ease-out hover:text-zinc-400 hover:decoration-zinc-500/50"
+                className={`text-zinc-500/85 underline decoration-zinc-600/30 underline-offset-[7px] ${transitionQuick} hover:text-zinc-400 hover:decoration-zinc-500/45 sm:text-zinc-500 sm:decoration-zinc-600/40 sm:hover:decoration-zinc-500/50 ${linkFocusVisible} ${tapSoft}`}
               >
                 Get in touch
               </Link>
@@ -116,11 +123,11 @@ const RECENT_PIECES_GRID = [
 
 /** Overlap into hero; bottom padding stays moderate — next block adds its own top padding. */
 const HOME_FIRST_AFTER_HERO =
-  "relative z-10 px-6 -mt-16 pt-20 pb-14 sm:-mt-20 sm:px-10 sm:pt-24 sm:pb-16 lg:px-16 lg:pb-16";
+  "relative z-10 px-6 -mt-16 pt-20 pb-16 sm:-mt-20 sm:px-10 sm:pt-24 sm:pb-[4.5rem] lg:px-16 lg:pb-20";
 /** One rhythm for all editorial stacks on home (avoids py-12 + py-12 feeling too loose). */
-const HOME_EDITORIAL_SECTION = "px-6 py-8 sm:px-10 sm:py-9 lg:px-16 lg:py-9";
+const HOME_EDITORIAL_SECTION = "px-6 py-9 sm:px-10 sm:py-10 lg:px-16 lg:py-10";
 /** Strip before Work — same vertical scale as sections */
-const SECTION_BREAK = "py-8 sm:py-9 lg:py-9";
+const SECTION_BREAK = "py-9 sm:py-10 lg:py-10";
 
 function WorkMosaic() {
   return (
@@ -138,7 +145,7 @@ function WorkMosaic() {
           >
             <Link
               href={`/portfolio/${slug}`}
-              className={`${editorialFrame} ${fillCell ? "flex min-h-0 flex-1 flex-col md:h-full" : "block"}`}
+              className={`${editorialFrameInteractive} ${fillCell ? "flex min-h-0 flex-1 flex-col md:h-full" : "block"}`}
             >
               <div
                 className={
@@ -167,7 +174,7 @@ function WorkMosaic() {
 function AboutTeaser() {
   return (
     <section className="mx-auto w-full max-w-7xl" aria-labelledby="about-heading">
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-8 xl:gap-9">
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10 xl:gap-12">
         <div className="order-2 max-w-[26rem] shrink-0 lg:order-1 lg:max-w-[min(100%,22rem)] xl:max-w-[24rem]">
           <p className={typeMeta}>Studio</p>
           <h2 id="about-heading" className={`${stackMetaToTitle} ${typeH2Large}`}>
@@ -214,16 +221,16 @@ export default function Home() {
     <div className="flex min-h-dvh flex-1 flex-col bg-zinc-950 text-zinc-100 antialiased">
       <Hero imageSrc={heroSrc} />
 
-      <main className="relative z-10">
+      <main className="relative z-10 pb-20 sm:pb-24 lg:pb-28">
         {widePlateProject ? (
           <section className={widePlateSectionClass} aria-label={widePlateProject.title}>
             <div className="mx-auto w-full max-w-7xl">
-              <Link href={`/portfolio/${widePlateProject.slug}`} className={editorialFrame}>
+              <Link href={`/portfolio/${widePlateProject.slug}`} className={editorialFrameInteractive}>
                 <div className="relative aspect-[5/4] w-full sm:aspect-[2/1] lg:aspect-[2/1] lg:max-h-[min(68vh,42rem)]">
                   <img
                     src={homepageImages.widePlate}
                     alt=""
-                    className="absolute inset-0 h-full w-full object-cover object-[center_40%] brightness-[0.88] contrast-[1.06] transition duration-300 ease-out group-hover:scale-[1.015] group-hover:opacity-[0.94]"
+                    className={`absolute inset-0 h-full w-full object-cover object-[center_40%] brightness-[0.88] contrast-[1.06] ${editorialImage}`}
                     sizes="(min-width: 1280px) 80rem, 100vw"
                     loading="lazy"
                   />
@@ -237,7 +244,7 @@ export default function Home() {
         {widePlateProject ? (
           <section className={HOME_EDITORIAL_SECTION} aria-label={widePlateProject.title}>
             <div className="mx-auto w-full max-w-7xl">
-              <Link href={`/portfolio/${widePlateProject.slug}`} className={editorialFrame}>
+              <Link href={`/portfolio/${widePlateProject.slug}`} className={editorialFrameInteractive}>
                 <div className="relative aspect-[3/4] w-full">
                   <img
                     src={homepageImages.widePlateFollow}
@@ -258,7 +265,7 @@ export default function Home() {
             <div className="mx-auto flex max-w-7xl flex-col gap-5 md:gap-6">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-12 md:items-start md:gap-x-4 md:gap-y-0 md:content-start">
                 <div className="md:col-span-6 md:self-start">
-                  <Link href={`/portfolio/${wideBelowProject.slug}`} className={editorialFrame}>
+                  <Link href={`/portfolio/${wideBelowProject.slug}`} className={editorialFrameInteractive}>
                     <div className="relative aspect-[3/4] w-full">
                       <img
                         src={homepageImages.widePlateBelow}
@@ -272,7 +279,7 @@ export default function Home() {
                   </Link>
                 </div>
                 <div className="md:col-span-6 md:self-start">
-                  <Link href={`/portfolio/${wideBelowProject.slug}`} className={editorialFrame}>
+                  <Link href={`/portfolio/${wideBelowProject.slug}`} className={editorialFrameInteractive}>
                     <div className="relative aspect-[3/4] w-full">
                       <img
                         src={homepageImages.widePlateBelowBeside}
@@ -288,7 +295,7 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-12 md:items-start md:gap-x-4 md:gap-y-0 md:content-start">
                 <div className="md:col-span-6 md:self-start">
-                  <Link href={`/portfolio/${wideBelowProject.slug}`} className={editorialFrame}>
+                  <Link href={`/portfolio/${wideBelowProject.slug}`} className={editorialFrameInteractive}>
                     <div className="relative aspect-[3/4] w-full">
                       <img
                         src={homepageImages.wideBelowPair[0]}
@@ -302,7 +309,7 @@ export default function Home() {
                   </Link>
                 </div>
                 <div className="md:col-span-6 md:self-start">
-                  <Link href={`/portfolio/${wideBelowProject.slug}`} className={editorialFrame}>
+                  <Link href={`/portfolio/${wideBelowProject.slug}`} className={editorialFrameInteractive}>
                     <div className="relative aspect-[3/4] w-full">
                       <img
                         src={homepageImages.wideBelowPair[1]}
@@ -324,7 +331,7 @@ export default function Home() {
           <section className={duoSectionClass} aria-label={duoProject.title}>
             <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 md:grid-cols-12 md:items-start md:gap-x-4 md:gap-y-0 md:content-start">
               <div className="md:col-span-7 md:self-start">
-                <Link href={`/portfolio/${duoProject.slug}`} className={editorialFrame}>
+                <Link href={`/portfolio/${duoProject.slug}`} className={editorialFrameInteractive}>
                   <div className="relative aspect-[5/4] w-full sm:aspect-[16/10] md:aspect-[16/10]">
                     <img
                       src={homepageImages.duo[0]}
@@ -338,7 +345,7 @@ export default function Home() {
                 </Link>
               </div>
               <div className="md:col-span-5 md:self-start">
-                <Link href={`/portfolio/${duoProject.slug}`} className={editorialFrame}>
+                <Link href={`/portfolio/${duoProject.slug}`} className={editorialFrameInteractive}>
                   <div className="relative aspect-[3/4] w-full">
                     <img
                       src={homepageImages.duo[1]}
@@ -367,7 +374,7 @@ export default function Home() {
               Recent commissions and personal series — editorial and portrait work gathered in one index
               under Work.
             </p>
-            <div className="mt-3 md:mt-4">
+            <div className="mt-6 md:mt-8">
               <WorkMosaic />
             </div>
           </div>

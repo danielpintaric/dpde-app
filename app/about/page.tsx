@@ -3,6 +3,7 @@ import { PageMain } from "@/components/site-chrome";
 import {
   editorialImageTone,
   editorialImageOverlay,
+  pageContentShell,
   stackMetaToTitle,
   stackTitleToBody,
   typeBodyMuted,
@@ -36,7 +37,7 @@ const VALUES = [
 export default function AboutPage() {
   return (
     <PageMain>
-      <div className="px-6 pb-20 pt-28 sm:px-10 lg:px-16 lg:pb-28 lg:pt-28">
+      <div className={pageContentShell}>
         <div className="mx-auto max-w-7xl">
           <p className={typeMeta}>Studio</p>
           <h1 className={`${stackMetaToTitle} ${typeH1Page}`}>About</h1>
@@ -84,7 +85,7 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <section className="mt-20 border-t border-zinc-800/50 pt-16 lg:mt-28 lg:pt-20" aria-label="Values">
+          <section className="mt-24 border-t border-zinc-800/40 pt-16 lg:mt-28 lg:pt-20" aria-label="Values">
             <h2 className={typeH2Section}>What the work assumes</h2>
             <ul className="mt-12 grid gap-12 sm:grid-cols-3 sm:gap-10 lg:mt-16 lg:gap-14">
               {VALUES.map((item, i) => (

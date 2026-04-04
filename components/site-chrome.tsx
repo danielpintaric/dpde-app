@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { linkFocusVisible, tapSoft, transitionQuick } from "@/lib/editorial";
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-zinc-800/50">
-      <div className="mx-auto max-w-7xl px-6 py-16 sm:px-10 sm:py-20 lg:px-16 lg:py-20">
+    <footer className="mt-10 border-t border-zinc-800/30 sm:mt-12">
+      <div className="mx-auto max-w-7xl px-6 pt-16 pb-20 sm:px-10 sm:pt-20 sm:pb-24 lg:px-16 lg:pt-24 lg:pb-24">
         <div className="flex flex-col gap-10 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-zinc-500">
@@ -15,7 +16,7 @@ export function SiteFooter() {
             <p className="mt-4">
               <a
                 href="mailto:hello@danielpintaric.com"
-                className="text-[11px] font-normal tracking-[0.05em] text-zinc-600 underline decoration-zinc-700/35 underline-offset-[6px] transition duration-300 ease-out hover:text-zinc-500 hover:decoration-zinc-600/45"
+                className={`text-[11px] font-normal tracking-[0.05em] text-zinc-600 underline decoration-zinc-700/35 underline-offset-[6px] ${transitionQuick} hover:text-zinc-500 hover:decoration-zinc-600/50 ${linkFocusVisible} ${tapSoft}`}
               >
                 hello@danielpintaric.com
               </a>
@@ -26,13 +27,13 @@ export function SiteFooter() {
               href="https://www.instagram.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[11px] font-normal tracking-[0.06em] text-zinc-500 underline decoration-zinc-600/40 underline-offset-[7px] transition duration-300 ease-out hover:text-zinc-400 hover:decoration-zinc-500/50"
+              className={`text-[11px] font-normal tracking-[0.06em] text-zinc-500 underline decoration-zinc-600/40 underline-offset-[7px] ${transitionQuick} hover:text-zinc-400 hover:decoration-zinc-500/55 ${linkFocusVisible} ${tapSoft}`}
             >
               Instagram
             </a>
             <Link
               href="/contact"
-              className="text-[11px] font-normal tracking-[0.06em] text-zinc-500 underline decoration-zinc-600/40 underline-offset-[7px] transition duration-300 ease-out hover:text-zinc-400 hover:decoration-zinc-500/50"
+              className={`text-[11px] font-normal tracking-[0.06em] text-zinc-500 underline decoration-zinc-600/40 underline-offset-[7px] ${transitionQuick} hover:text-zinc-400 hover:decoration-zinc-500/55 ${linkFocusVisible} ${tapSoft}`}
             >
               Get in touch
             </Link>
