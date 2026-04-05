@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { logAdminLoginAuthError } from "@/lib/actions/admin-login-debug";
 import { createSupabaseBrowserClient } from "@/lib/db/supabase-browser";
+
+const GENERIC_SIGN_IN_ERROR =
+  "Sign-in failed. Check Supabase URL/key and Email provider settings.";
 
 function AdminLoginForm() {
   const router = useRouter();
@@ -11,7 +15,7 @@ function AdminLoginForm() {
   const gateReason = searchParams.get("reason");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ main: string; debug?: string } | null>(null);
   const [pending, setPending] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -25,13 +29,27 @@ function AdminLoginForm() {
         password,
       });
       if (signError) {
-        setError(signError.message);
+        await logAdminLoginAuthError({
+          kind: "supabase",
+          message: signError.message,
+          status: signError.status,
+          name: signError.name,
+        });
+        setError({
+          main: GENERIC_SIGN_IN_ERROR,
+          debug: `${signError.message}${signError.status != null ? ` (status: ${signError.status})` : ""}`,
+        });
         return;
       }
       router.refresh();
       router.push("/admin/projects");
-    } catch {
-      setError("Sign-in failed. Check Supabase URL/key and Email provider settings.");
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      await logAdminLoginAuthError({ kind: "exception", message: detail, name: err instanceof Error ? err.name : undefined });
+      setError({
+        main: GENERIC_SIGN_IN_ERROR,
+        debug: detail,
+      });
     } finally {
       setPending(false);
     }
@@ -52,9 +70,17 @@ function AdminLoginForm() {
           </p>
         ) : null}
         {error ? (
-          <p className="rounded border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-200">
-            {error}
-          </p>
+          <div className="rounded border border-red-900/50 bg-red-950/30 px-3 py-2 text-sm text-red-200">
+            <p>{error.main}</p>
+            {error.debug ? (
+              <p className="mt-2 border-t border-red-900/40 pt-2 font-mono text-[11px] leading-relaxed text-red-300/85">
+                <span className="font-sans font-medium uppercase tracking-wide text-red-400/90">
+                  Temporary debug (remove for production) — Supabase / client:{" "}
+                </span>
+                {error.debug}
+              </p>
+            ) : null}
+          </div>
         ) : null}
         <div>
           <label htmlFor="email" className="mb-1 block text-xs uppercase tracking-wider text-zinc-500">
