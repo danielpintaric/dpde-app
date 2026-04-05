@@ -8,6 +8,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /**
  * Server Supabase client (Server Components, Route Handlers, Server Actions).
  * Session is propagated via cookies when auth is wired up.
+ *
+ * Do not use from `generateStaticParams` or other build-time paths — use
+ * {@link createSupabasePublicClient} and `*-public` DB helpers for anonymous reads.
  */
 export async function createSupabaseServerClient(): Promise<SupabaseClient> {
   const { url, anonKey } = getSupabasePublicConfig();

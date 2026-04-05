@@ -1,5 +1,13 @@
 import "server-only";
 
+/**
+ * **Public portfolio data** for `/portfolio`, `/portfolio/[slug]`, sitemap, and home excerpts:
+ * always goes through {@link getCatalogProjects} / {@link getCatalogProjectBySlug} → `project-catalog`
+ * → `lib/db/*-public` + `createSupabasePublicClient` (no `cookies()`, no session).
+ *
+ * Admin/client session reads stay in `lib/db/projects.ts` / `images.ts` with `createSupabaseServerClient`.
+ */
+
 import { SupabaseConfigError, getSupabasePublicConfig } from "@/lib/db/supabase-env";
 import type { PortfolioProject } from "@/lib/portfolio-data";
 import {

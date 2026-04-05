@@ -16,6 +16,7 @@ import {
   typeH2Section,
   typeMeta,
 } from "@/lib/editorial";
+/** Data: {@link loadWorkPortfolioProjects} → public Supabase (no session cookies). */
 import { loadWorkPortfolioProjects } from "@/lib/services/portfolio-view-data";
 
 export const metadata: Metadata = {

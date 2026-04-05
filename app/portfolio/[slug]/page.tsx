@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PortfolioProjectView } from "@/components/portfolio/portfolio-project-view";
+/** Data via `portfolio-view-data` → `project-catalog` → public DB helpers (no cookies). */
 import {
   loadPortfolioAdjacentProjects,
   loadPortfolioProjectBySlug,

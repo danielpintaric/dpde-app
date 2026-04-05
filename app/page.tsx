@@ -20,7 +20,6 @@ import {
   homepageImages,
 } from "@/lib/portfolio-data";
 import {
-  getHomeFeaturedEditorialData,
   getHomeHeroFallbackImageSrc,
   getHomepageLinkedProjects,
   getHomeWorkMosaicFrames,
@@ -211,9 +210,8 @@ function AboutTeaser() {
 }
 
 export default async function Home() {
-  const editorial = await getHomeFeaturedEditorialData();
-  const blockA = editorial[0];
-  const heroSrc = blockA?.image ?? getHomeHeroFallbackImageSrc();
+  /** Fixed landscape hero (`HOME_HERO_IMAGE`); not the first featured project cover from DB. */
+  const heroSrc = getHomeHeroFallbackImageSrc();
 
   const { widePlateProject, wideBelowProject, duoProject } =
     await getHomepageLinkedProjects();

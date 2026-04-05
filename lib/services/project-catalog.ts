@@ -1,7 +1,10 @@
 import "server-only";
 
-import { listImagesByProjectId } from "@/lib/db/images";
-import { getProjectBySlug, listProjects } from "@/lib/db/projects";
+import {
+  getPublishedProjectBySlugPublic,
+  listPublishedProjectsPublic,
+} from "@/lib/db/projects-public";
+import { listImagesByProjectIdPublic } from "@/lib/db/images-public";
 import { getProjectImagePublicUrl } from "@/lib/storage/project-image-public-url";
 import type { Image, Project } from "@/types/project";
 
@@ -13,15 +16,14 @@ import type { Image, Project } from "@/types/project";
  * - **`private`** — **never** here or on public routes; `/client` only when logged in (see client-portfolio-data).
  */
 export async function getCatalogProjects(): Promise<Project[]> {
-  const rows = await listProjects();
-  return rows.filter((p) => p.visibility === "public");
+  return listPublishedProjectsPublic();
 }
 
 /** Resolves project for public detail: `public` and `unlisted` only. */
 export async function getCatalogProjectBySlug(
   slug: string,
 ): Promise<Project | null> {
-  const project = await getProjectBySlug(slug);
+  const project = await getPublishedProjectBySlugPublic(slug);
   if (!project) {
     return null;
   }
@@ -39,5 +41,5 @@ export function getCatalogImagePublicUrl(image: Image): string {
 export async function getCatalogProjectImages(
   projectId: string,
 ): Promise<Image[]> {
-  return listImagesByProjectId(projectId);
+  return listImagesByProjectIdPublic(projectId);
 }
