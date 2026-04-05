@@ -1,58 +1,17 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { revalidatePortfolioSync } from "@/lib/admin/revalidate-portfolio-sync";
 import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import {
   deleteAdminProjectImage,
+  reorderAdminProjectImages,
   setAdminProjectCoverImage,
   updateAdminImageDetails,
   updateAdminImageSortOrder,
-  uploadFilesToProject,
 } from "@/lib/services/admin-images";
 
-export type AdminImageUploadState = { error?: string } | null;
-
-function revalidatePortfolioSync(projectId: string, projectSlug: string | null) {
-  revalidatePath("/admin/projects");
-  revalidatePath(`/admin/projects/${projectId}/edit`);
-  revalidatePath("/portfolio");
-  revalidatePath("/");
-  if (projectSlug) {
-    revalidatePath(`/portfolio/${projectSlug}`);
-    revalidatePath(`/client/${projectSlug}`);
-  }
-}
-
-export async function uploadProjectImagesAction(
-  _prev: AdminImageUploadState,
-  formData: FormData,
-): Promise<AdminImageUploadState> {
-  await requireAdminSession();
-  const projectId = String(formData.get("projectId") ?? "").trim();
-  const projectSlug = String(formData.get("projectSlug") ?? "").trim() || null;
-  if (!projectId) {
-    return { error: "Missing project." };
-  }
-
-  const files = formData
-    .getAll("files")
-    .filter((f): f is File => f instanceof File && f.size > 0);
-
-  if (files.length === 0) {
-    return { error: "No files selected." };
-  }
-
-  try {
-    await uploadFilesToProject(projectId, files);
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Upload failed.";
-    return { error: message };
-  }
-
-  revalidatePortfolioSync(projectId, projectSlug);
-  redirect(`/admin/projects/${projectId}/edit`);
-}
+export type ReorderProjectImagesResult = { ok: true } | { ok: false; error: string };
 
 export async function deleteProjectImageAction(formData: FormData) {
   await requireAdminSession();
@@ -78,6 +37,28 @@ export async function setProjectCoverImageAction(formData: FormData) {
   await setAdminProjectCoverImage(projectId, imageId);
   revalidatePortfolioSync(projectId, projectSlug);
   redirect(`/admin/projects/${projectId}/edit`);
+}
+
+export async function reorderProjectImagesAction(
+  projectId: string,
+  projectSlug: string | null,
+  orderedImageIds: string[],
+): Promise<ReorderProjectImagesResult> {
+  await requireAdminSession();
+  const pid = String(projectId ?? "").trim();
+  const slugRaw = String(projectSlug ?? "").trim();
+  const slug = slugRaw || null;
+  if (!pid || !Array.isArray(orderedImageIds) || orderedImageIds.length === 0) {
+    return { ok: false, error: "Ungültige Daten." };
+  }
+  try {
+    await reorderAdminProjectImages(pid, orderedImageIds);
+    revalidatePortfolioSync(pid, slug);
+    return { ok: true };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Sortierung fehlgeschlagen.";
+    return { ok: false, error: message };
+  }
 }
 
 export async function updateImageSortOrderAction(formData: FormData) {

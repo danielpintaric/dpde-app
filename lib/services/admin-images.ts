@@ -1,18 +1,19 @@
 import "server-only";
 
+import { DEFAULT_UPLOAD_ASPECT_CLASS } from "@/lib/constants/admin-image-aspects";
 import {
-  DEFAULT_UPLOAD_ASPECT_CLASS,
   deleteImageRow,
   getImageById,
   getNextImageSortOrder,
   insertUploadedImageRow,
+  reorderProjectImagesDb,
   setProjectCoverImageId,
   updateImageMetadataDb,
   updateImageSortOrderDb,
 } from "@/lib/db/image-mutations";
 import { listImagesByProjectId } from "@/lib/db/images";
 import { getProjectById } from "@/lib/db/project-mutations";
-import { getProjectImagePublicUrl } from "@/lib/storage/project-image-public-url";
+import { getAdminImagePreviewUrl } from "@/lib/admin/admin-image-preview-url";
 import {
   removeObjectFromProjectBucketIfPresent,
   shouldRemoveObjectFromBucket,
@@ -25,11 +26,7 @@ export async function listAdminProjectImages(projectId: string): Promise<Image[]
 }
 
 export function adminImagePreviewUrl(image: Image): string {
-  const external = image.externalUrl?.trim();
-  if (external) {
-    return external;
-  }
-  return getProjectImagePublicUrl(image.storagePath);
+  return getAdminImagePreviewUrl(image);
 }
 
 export async function uploadFilesToProject(
@@ -96,6 +93,17 @@ export async function setAdminProjectCoverImage(
     throw new Error("Image not found for this project.");
   }
   await setProjectCoverImageId(projectId, imageId);
+}
+
+export async function reorderAdminProjectImages(
+  projectId: string,
+  orderedImageIds: string[],
+): Promise<void> {
+  const project = await getProjectById(projectId);
+  if (!project) {
+    throw new Error("Project not found.");
+  }
+  await reorderProjectImagesDb(projectId, orderedImageIds);
 }
 
 export async function updateAdminImageSortOrder(

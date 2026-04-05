@@ -1,6 +1,8 @@
 import "server-only";
 
-import { createSupabaseServerClient } from "@/lib/db/supabase-server";
+import { createSupabaseServiceRoleClient } from "@/lib/db/supabase-service-role";
+import { isProductionDeploy } from "@/lib/server-deployment";
+import { logServerWarning } from "@/lib/server-log";
 import {
   PROJECT_IMAGES_BUCKET,
   projectImageOriginalObjectPath,
@@ -36,7 +38,18 @@ export async function uploadOriginalToProjectBucket(
 ): Promise<{ storagePath: string; storedFilename: string }> {
   const storedFilename = uniqueOriginalFilename(file.name);
   const storagePath = projectImageOriginalObjectPath(projectId, storedFilename);
-  const supabase = await createSupabaseServerClient();
+  /** Service-Role: Storage-RLS für `anon`/JWT lässt Admin-Upload oft zuverlässiger zu als komplexe storage.objects-Policies. */
+  const supabase = createSupabaseServiceRoleClient();
+  if (process.env.NODE_ENV === "development" && !isProductionDeploy()) {
+    logServerWarning(
+      "admin-storage-upload",
+      [
+        "storage.upload: using service-role upload path",
+        `bucket=${PROJECT_IMAGES_BUCKET}`,
+        `path=${storagePath.slice(0, 72)}${storagePath.length > 72 ? "…" : ""}`,
+      ].join(" · "),
+    );
+  }
   const body = await file.arrayBuffer();
   const contentType = file.type || "application/octet-stream";
 
@@ -57,7 +70,7 @@ export async function uploadOriginalToProjectBucket(
 export async function removeObjectFromProjectBucketIfPresent(
   storagePath: string,
 ): Promise<void> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServiceRoleClient();
   const { error } = await supabase.storage
     .from(PROJECT_IMAGES_BUCKET)
     .remove([storagePath]);

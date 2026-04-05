@@ -1,5 +1,6 @@
 import "server-only";
 
+import { DEFAULT_UPLOAD_ASPECT_CLASS } from "@/lib/constants/admin-image-aspects";
 import { mapImageRow, type ImageRow } from "@/lib/db/map-supabase-rows";
 import { supabaseReadError } from "@/lib/db/supabase-read-error";
 import { createSupabaseServerClient } from "@/lib/db/supabase-server";
@@ -9,9 +10,6 @@ function writeError(context: string, message: string, code?: string): Error {
   const codePart = code ? ` [${code}]` : "";
   return new Error(`Supabase ${context} failed:${codePart} ${message}`);
 }
-
-/** Default gallery layout for newly uploaded files until per-image editing exists. */
-export const DEFAULT_UPLOAD_ASPECT_CLASS = "aspect-[4/5] sm:aspect-[16/10]";
 
 export async function getImageById(id: string): Promise<Image | null> {
   const supabase = await createSupabaseServerClient();
@@ -99,6 +97,36 @@ export async function updateImageSortOrderDb(
     throw writeError("image sort update", error.message, error.code);
   }
   return mapImageRow(data as ImageRow);
+}
+
+/** Setzt `sort_order` für alle Bilder eines Projekts auf 0 … n−1 in der gegebenen Reihenfolge. */
+export async function reorderProjectImagesDb(
+  projectId: string,
+  orderedImageIds: string[],
+): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const { data: rows, error: listErr } = await supabase
+    .from("images")
+    .select("id")
+    .eq("project_id", projectId);
+
+  if (listErr) {
+    throw writeError("images list for reorder", listErr.message, listErr.code);
+  }
+
+  const existing = new Set((rows as { id: string }[]).map((r) => r.id));
+  if (orderedImageIds.length !== existing.size || orderedImageIds.length === 0) {
+    throw new Error("Reorder must include all project images exactly once.");
+  }
+  for (const id of orderedImageIds) {
+    if (!existing.has(id)) {
+      throw new Error("Invalid image in reorder list.");
+    }
+  }
+
+  for (let i = 0; i < orderedImageIds.length; i++) {
+    await updateImageSortOrderDb(orderedImageIds[i], projectId, i);
+  }
 }
 
 export async function updateImageMetadataDb(

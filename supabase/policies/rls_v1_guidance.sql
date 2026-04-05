@@ -37,6 +37,9 @@
 -- 4) Storage bucket `project-images`:
 --    - Public objects: read for `anon` if bucket is public.
 --    - Private bucket: signed URLs only; avoid exposing `service_role` to the browser.
+--    - Admin INSERT/UPDATE/DELETE auf storage.objects: entweder explizite Policies
+--      (z. B. authenticated + Pfad-Prüfung), oder — wie in dieser App —
+--      serverseitiger Upload mit SUPABASE_SERVICE_ROLE_KEY nach App-Admin-Check.
 --
 -- Example pattern (pseudo-SQL — validate on a staging project):
 --
