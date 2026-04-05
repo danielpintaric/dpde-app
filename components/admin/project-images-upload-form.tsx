@@ -18,7 +18,7 @@ export function ProjectImagesUploadForm({ projectId, projectSlug }: Props) {
   );
 
   return (
-    <form action={formAction} encType="multipart/form-data" className="mb-10">
+    <form action={formAction} className="mb-10">
       <input type="hidden" name="projectId" value={projectId} />
       <input type="hidden" name="projectSlug" value={projectSlug} />
       {state?.error ? (
