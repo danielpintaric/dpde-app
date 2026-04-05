@@ -1,4 +1,6 @@
-export type GalleryLayoutType = "cinematic" | "grid" | "mixed";
+import type { GalleryLayoutType } from "@/types/project";
+
+export type { GalleryLayoutType } from "@/types/project";
 
 export type ProjectImage = {
   /** Unsplash (or other) URL — required for real frames */
@@ -116,6 +118,42 @@ export type HomeWorkPreviewFrame = {
   /** Optional `img` classes (e.g. `object-[center_42%]` when the plate is wide but the file is portrait). */
   imgClassName?: string;
 };
+
+/** Curated mosaic layout: slug, which frame from the project (`cover` or `images` index), optional img class. */
+export type HomeMosaicSlot = {
+  slug: string;
+  frame: "cover" | number;
+  imgClassName?: string;
+};
+
+/**
+ * Same length/order as {@link HOME_WORK_PREVIEW}; drives Supabase-backed mosaic resolution.
+ */
+export const HOME_MOSAIC_SLOTS: readonly HomeMosaicSlot[] = [
+  { slug: "quiet-portraits", frame: "cover" },
+  { slug: "studio-form", frame: 1 },
+  { slug: "winter-portrait", frame: "cover" },
+  {
+    slug: "coastal-silence",
+    frame: "cover",
+    imgClassName: "object-[center_45%]",
+  },
+  {
+    slug: "atelier-campaign",
+    frame: "cover",
+    imgClassName: "object-[center_45%]",
+  },
+  {
+    slug: "atelier-campaign",
+    frame: 2,
+    imgClassName: "object-[center_45%]",
+  },
+  {
+    slug: "quiet-portraits",
+    frame: 4,
+    imgClassName: "object-[center_45%]",
+  },
+];
 
 /**
  * Homepage “Recent pieces” mosaic — seven cells; last row is another pair of 3:4 halves below horse/red.

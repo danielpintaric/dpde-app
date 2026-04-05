@@ -1,0 +1,54 @@
+-- =============================================================================
+-- RLS V1 guidance — align Postgres policies with app-layer visibility rules
+-- =============================================================================
+-- App semantics (see lib/services/project-catalog.ts, client-portfolio-data.ts):
+--
+-- | visibility  | Public listing | /portfolio/[slug] | /client (auth)     |
+-- |-------------|----------------|-------------------|--------------------|
+-- | public      | yes            | yes               | no (use /portfolio)|
+-- | unlisted    | no             | yes (direct link) | no                 |
+-- | private     | no             | no                | yes                |
+--
+-- Admin writes use the same Supabase session; restrict admin emails via
+-- ADMIN_EMAILS in the Next.js app (middleware + requireAdminSession). RLS
+-- should still enforce least privilege on the database.
+--
+-- ------------------------------------------------------------------------------
+-- Practical starting point (adjust to your threat model)
+-- ------------------------------------------------------------------------------
+--
+-- 1) Public read of `projects` + `images` for anonymous users — **only** rows
+--    where projects.visibility = 'public'. Optionally omit `images` for anon
+--    and serve public pages via a restricted view — many sites use `service_role`
+--    only server-side; this app uses `anon` + server client, so policies must
+--    allow selective SELECT.
+--
+-- 2) Authenticated (`auth.role() = 'authenticated'`) SELECT on:
+--    - `private` projects (and their images) — **only if** you tie rows to
+--      `auth.uid()` later; V1 has no per-user assignment, so either:
+--      (a) keep private reads server-only with a service-role client for `/client`, or
+--      (b) allow all authenticated users to SELECT private (matches current “any login”
+--          client hub) — weaker, but matches app code until invitations exist.
+--
+-- 3) Admin INSERT/UPDATE/DELETE — typically restrict to `auth.jwt() ->> 'email'`
+--    in an allowlist (mirror ADMIN_EMAILS) or use a custom claim. Alternatively
+--    perform admin mutations only via Edge Functions with service role (not this repo’s V1).
+--
+-- 4) Storage bucket `project-images`:
+--    - Public objects: read for `anon` if bucket is public.
+--    - Private bucket: signed URLs only; avoid exposing `service_role` to the browser.
+--
+-- Example pattern (pseudo-SQL — validate on a staging project):
+--
+--   alter table public.projects enable row level security;
+--   alter table public.images enable row level security;
+--
+--   create policy "public_projects_select"
+--   on public.projects for select
+--   using (visibility = 'public');
+--
+--   create policy "unlisted_or_public_slug_detail"
+--   on public.projects for select
+--   using (visibility in ('public', 'unlisted'));  -- combine with app filtering as needed
+--
+-- Tighten policies incrementally; test anonymous, authenticated client, and admin flows.

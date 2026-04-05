@@ -1,41 +1,24 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { EditorialGallery } from "@/components/gallery/editorial-gallery";
-import { PageMain } from "@/components/site-chrome";
+import { PortfolioProjectView } from "@/components/portfolio/portfolio-project-view";
 import {
-  editorialImageOverlay,
-  editorialImageTone,
-  focusRing,
-  linkFocusVisible,
-  stackMetaToTitle,
-  stackTitleToBody,
-  tapSoft,
-  transitionColorsQuick,
-  transitionQuick,
-  typeBodyMuted,
-  typeH1Page,
-  typeMeta,
-} from "@/lib/editorial";
-import {
-  getAdjacentProjects,
-  getPortfolioBodyImages,
-  getProjectBySlug,
-  getPortfolioProjects,
-} from "@/lib/portfolio-data";
+  loadPortfolioAdjacentProjects,
+  loadPortfolioProjectBySlug,
+  loadWorkPortfolioProjects,
+} from "@/lib/services/portfolio-view-data";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export function generateStaticParams() {
-  return getPortfolioProjects().map((p) => ({ slug: p.slug }));
+export async function generateStaticParams() {
+  const projects = await loadWorkPortfolioProjects();
+  return projects.map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = await loadPortfolioProjectBySlug(slug);
   if (!project) {
     return { title: "Project" };
   }
@@ -47,83 +30,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PortfolioProjectPage({ params }: PageProps) {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = await loadPortfolioProjectBySlug(slug);
   if (!project) {
     notFound();
   }
 
-  const { prev, next } = getAdjacentProjects(slug);
+  const { prev, next } = await loadPortfolioAdjacentProjects(slug);
 
   return (
-    <PageMain>
-      <article className="pb-24 pt-28 sm:pb-28 sm:pt-28 lg:pb-32 lg:pt-28">
-        <header className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
-          <p className={typeMeta}>{project.category}</p>
-          <h1 className={`${stackMetaToTitle} ${typeH1Page}`}>{project.title}</h1>
-          <p className={`${stackTitleToBody} max-w-lg sm:max-w-xl ${typeBodyMuted}`}>{project.intro}</p>
-          <p className={`${stackTitleToBody} ${typeMeta}`}>
-            {project.year}
-            <span className="mx-3.5 text-zinc-700">·</span>
-            {project.location}
-          </p>
-        </header>
-
-        <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] mt-14 w-screen max-w-[100vw] sm:mt-16 lg:mt-20">
-          <div className="relative aspect-[16/10] max-h-[min(68vh,720px)] w-full overflow-hidden bg-zinc-900 sm:aspect-[2/1]">
-            <Image
-              src={project.coverImage}
-              alt=""
-              fill
-              className={`${editorialImageTone}`}
-              sizes="100vw"
-              priority
-            />
-            <div className={editorialImageOverlay} aria-hidden />
-          </div>
-        </div>
-
-        <EditorialGallery images={getPortfolioBodyImages(project)} />
-
-        <footer className="mt-20 border-t border-zinc-800/40 sm:mt-24 lg:mt-28">
-          <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
-            {next ? (
-              <Link
-                href={`/portfolio/${next.slug}`}
-                className={`group block cursor-pointer py-16 ${transitionQuick} sm:py-20 lg:py-24 ${focusRing} rounded-sm ${tapSoft}`}
-              >
-                <span className={`${typeMeta} ${transitionColorsQuick} group-hover:text-zinc-400`}>
-                  Next project
-                </span>
-                <span className={`mt-5 block max-w-2xl font-serif text-[clamp(1.65rem,3.5vw,2.35rem)] font-normal leading-[1.12] tracking-[-0.03em] text-zinc-300/95 ${transitionColorsQuick} group-hover:text-zinc-100/92`}>
-                  {next.title}
-                </span>
-              </Link>
-            ) : null}
-
-            <div className="flex flex-col gap-10 border-t border-zinc-800/40 py-12 sm:flex-row sm:items-center sm:justify-between sm:py-14">
-              <Link
-                href="/portfolio"
-                className={`text-[11px] font-normal tracking-[0.06em] text-zinc-500 underline decoration-zinc-600/40 underline-offset-[7px] ${transitionQuick} hover:text-zinc-400 hover:decoration-zinc-500/55 ${linkFocusVisible} ${tapSoft}`}
-              >
-                All work
-              </Link>
-              {prev ? (
-                <Link
-                  href={`/portfolio/${prev.slug}`}
-                  className={`text-left text-[11px] tracking-[0.04em] text-zinc-500 underline decoration-transparent underline-offset-[7px] ${transitionQuick} hover:text-zinc-400 hover:decoration-zinc-500/45 sm:text-right ${linkFocusVisible} ${tapSoft}`}
-                >
-                  <span className="mr-2.5 text-zinc-600">Previous</span>
-                  <span className="font-serif text-[0.9375rem] font-normal tracking-[-0.02em] text-zinc-400">
-                    {prev.title}
-                  </span>
-                </Link>
-              ) : (
-                <span className="hidden sm:block" aria-hidden />
-              )}
-            </div>
-          </div>
-        </footer>
-      </article>
-    </PageMain>
+    <PortfolioProjectView
+      project={project}
+      prev={prev}
+      next={next}
+      basePath="/portfolio"
+      indexHref="/portfolio"
+      indexLabel="All work"
+    />
   );
 }

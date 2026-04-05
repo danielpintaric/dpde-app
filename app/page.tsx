@@ -16,12 +16,15 @@ import {
 } from "@/lib/editorial";
 import {
   ABOUT_STUDIO_IMAGE,
-  getHomeFeaturedEditorial,
-  getProjectBySlug,
-  HOME_HERO_IMAGE,
-  HOME_WORK_PREVIEW,
+  type HomeWorkPreviewFrame,
   homepageImages,
 } from "@/lib/portfolio-data";
+import {
+  getHomeFeaturedEditorialData,
+  getHomeHeroFallbackImageSrc,
+  getHomepageLinkedProjects,
+  getHomeWorkMosaicFrames,
+} from "@/lib/services/home-portfolio-data";
 
 function Hero({ imageSrc }: { imageSrc: string }) {
   return (
@@ -132,13 +135,13 @@ const HOME_EDITORIAL_SECTION = "px-6 py-9 sm:px-10 sm:py-10 lg:px-16 lg:py-10";
 /** Strip before Work — same vertical scale as sections */
 const SECTION_BREAK = "py-9 sm:py-10 lg:py-10";
 
-function WorkMosaic() {
+function WorkMosaic({ frames }: { frames: HomeWorkPreviewFrame[] }) {
   return (
     <ul
       className="grid grid-cols-1 gap-4 md:grid-cols-12 md:gap-4 md:items-stretch"
       aria-label="Selected work"
     >
-      {HOME_WORK_PREVIEW.map(({ src, slug, imgClassName }, i) => {
+      {frames.map(({ src, slug, imgClassName }, i) => {
         const cfg = RECENT_PIECES_GRID[i] ?? RECENT_PIECES_GRID[0]!;
         const fillCell = "fillCell" in cfg && cfg.fillCell;
         return (
@@ -207,14 +210,15 @@ function AboutTeaser() {
   );
 }
 
-export default function Home() {
-  const editorial = getHomeFeaturedEditorial();
+export default async function Home() {
+  const editorial = await getHomeFeaturedEditorialData();
   const blockA = editorial[0];
-  const heroSrc = blockA?.image ?? HOME_HERO_IMAGE;
+  const heroSrc = blockA?.image ?? getHomeHeroFallbackImageSrc();
 
-  const widePlateProject = getProjectBySlug(homepageImages.widePlateSlug);
-  const wideBelowProject = getProjectBySlug(homepageImages.widePlateBelowSlug);
-  const duoProject = getProjectBySlug(homepageImages.duoSlug);
+  const { widePlateProject, wideBelowProject, duoProject } =
+    await getHomepageLinkedProjects();
+
+  const mosaicFrames = await getHomeWorkMosaicFrames();
 
   /** First block after hero overlaps hero — wide rail is the opening beat. */
   const widePlateSectionClass = HOME_FIRST_AFTER_HERO;
@@ -378,7 +382,7 @@ export default function Home() {
               under Work.
             </p>
             <div className="mt-6 md:mt-8">
-              <WorkMosaic />
+              <WorkMosaic frames={mosaicFrames} />
             </div>
           </div>
         </section>

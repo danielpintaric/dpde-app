@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
 import { getBaseUrl } from "@/lib/public-config";
-import { getPortfolioProjects } from "@/lib/portfolio-data";
+import { loadWorkPortfolioProjects } from "@/lib/services/portfolio-view-data";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getBaseUrl();
   const lastModified = new Date();
 
@@ -15,7 +15,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: path === "" ? 1 : 0.8,
   }));
 
-  for (const p of getPortfolioProjects()) {
+  const portfolioProjects = await loadWorkPortfolioProjects();
+
+  for (const p of portfolioProjects) {
     entries.push({
       url: `${base}/portfolio/${p.slug}`,
       lastModified,

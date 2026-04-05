@@ -24,15 +24,38 @@ if (
   );
 }
 
+function supabaseStorageHost(): string | null {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  if (!raw) {
+    return null;
+  }
+  try {
+    return new URL(raw).hostname;
+  } catch {
+    return null;
+  }
+}
+
+const remotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
+  {
+    protocol: "https",
+    hostname: "images.unsplash.com",
+    pathname: "/**",
+  },
+];
+
+const supabaseHost = supabaseStorageHost();
+if (supabaseHost) {
+  remotePatterns.push({
+    protocol: "https",
+    hostname: supabaseHost,
+    pathname: "/storage/v1/object/public/**",
+  });
+}
+
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-        pathname: "/**",
-      },
-    ],
+    remotePatterns,
   },
 };
 

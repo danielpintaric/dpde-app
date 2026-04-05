@@ -16,7 +16,7 @@ import {
   typeH2Section,
   typeMeta,
 } from "@/lib/editorial";
-import { getPortfolioProjects } from "@/lib/portfolio-data";
+import { loadWorkPortfolioProjects } from "@/lib/services/portfolio-view-data";
 
 export const metadata: Metadata = {
   title: "Work — Daniel Pintarić",
@@ -26,8 +26,8 @@ export const metadata: Metadata = {
 
 const CATEGORIES = ["Editorial", "Portrait", "Architecture", "Personal"] as const;
 
-export default function PortfolioPage() {
-  const projects = getPortfolioProjects();
+export default async function PortfolioPage() {
+  const projects = await loadWorkPortfolioProjects();
 
   return (
     <PageMain>
