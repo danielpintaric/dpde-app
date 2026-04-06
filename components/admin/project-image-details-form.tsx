@@ -39,7 +39,7 @@ function equalSnapshot(a: DetailsSnapshot, b: DetailsSnapshot): boolean {
   );
 }
 
-function SubmitDetailsButton({ dirty }: { dirty: boolean }) {
+function SubmitDetailsButton({ dirty, compact }: { dirty: boolean; compact: boolean }) {
   const { pending } = useFormStatus();
   const disabled = !dirty || pending;
   return (
@@ -47,7 +47,9 @@ function SubmitDetailsButton({ dirty }: { dirty: boolean }) {
       type="submit"
       disabled={disabled}
       aria-busy={pending}
-      className="rounded border px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-45 border-zinc-500 bg-zinc-800/40 text-zinc-200 enabled:cursor-pointer enabled:hover:border-zinc-400 enabled:hover:bg-zinc-800"
+      className={`rounded border transition-colors disabled:cursor-not-allowed disabled:opacity-45 border-zinc-500 bg-zinc-800/40 text-zinc-200 enabled:cursor-pointer enabled:hover:border-zinc-400 enabled:hover:bg-zinc-800 ${
+        compact ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5 text-xs"
+      }`}
     >
       {pending ? "Saving…" : "Save details"}
     </button>
@@ -60,6 +62,8 @@ type Props = {
   aspectValue: string;
   showCustomAspect: boolean;
   justSaved: boolean;
+  /** Enges Layout im Inspector-Panel (einspaltig, kleinere Kontrollen). */
+  compact?: boolean;
 };
 
 export function ProjectImageDetailsForm({
@@ -68,6 +72,7 @@ export function ProjectImageDetailsForm({
   aspectValue,
   showCustomAspect,
   justSaved,
+  compact = false,
 }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
   const initialRef = useRef<DetailsSnapshot>({
@@ -127,11 +132,17 @@ export function ProjectImageDetailsForm({
     setDirty(!equalSnapshot(readSnapshot(form), initialRef.current));
   };
 
+  const cLabel = compact ? "mb-0.5 block text-[9px] uppercase tracking-wider text-zinc-600" : labelClass;
+  const cInput = compact
+    ? "w-full rounded border border-zinc-700/90 bg-zinc-900/80 px-1.5 py-1 text-[11px] leading-snug text-zinc-100 placeholder:text-zinc-600"
+    : inputClass;
+  const cGrid = compact ? "grid grid-cols-1 gap-2" : "grid gap-3 sm:grid-cols-2";
+
   return (
     <form
       ref={formRef}
       action={updateProjectImageDetailsAction}
-      className="space-y-3"
+      className={compact ? "space-y-2" : "space-y-3"}
       onChange={syncDirty}
       onInput={syncDirty}
     >
@@ -139,9 +150,9 @@ export function ProjectImageDetailsForm({
       <input type="hidden" name="imageId" value={image.id} />
       <input type="hidden" name="projectSlug" value={project.slug} />
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <label htmlFor={`caption-${image.id}`} className={labelClass}>
+      <div className={cGrid}>
+        <div className={compact ? "" : "sm:col-span-2"}>
+          <label htmlFor={`caption-${image.id}`} className={cLabel}>
             Caption
           </label>
           <textarea
@@ -149,12 +160,12 @@ export function ProjectImageDetailsForm({
             name="caption"
             rows={2}
             defaultValue={image.caption ?? ""}
-            className={`${inputClass} resize-y min-h-[2.5rem]`}
+            className={`${cInput} resize-y ${compact ? "min-h-[2.25rem]" : "min-h-[2.5rem]"}`}
             placeholder="Optional"
           />
         </div>
         <div>
-          <label htmlFor={`alt-${image.id}`} className={labelClass}>
+          <label htmlFor={`alt-${image.id}`} className={cLabel}>
             Alt text
           </label>
           <input
@@ -162,19 +173,19 @@ export function ProjectImageDetailsForm({
             name="altText"
             type="text"
             defaultValue={image.altText ?? ""}
-            className={inputClass}
+            className={cInput}
             placeholder="Optional"
           />
         </div>
         <div>
-          <label htmlFor={`aspect-${image.id}`} className={labelClass}>
+          <label htmlFor={`aspect-${image.id}`} className={cLabel}>
             Aspect class
           </label>
           <select
             id={`aspect-${image.id}`}
             name="aspectClass"
             defaultValue={aspectValue}
-            className={inputClass}
+            className={cInput}
           >
             {showCustomAspect ? (
               <option value={aspectValue}>
@@ -190,7 +201,7 @@ export function ProjectImageDetailsForm({
           </select>
         </div>
         <div>
-          <label htmlFor={`pos-${image.id}`} className={labelClass}>
+          <label htmlFor={`pos-${image.id}`} className={cLabel}>
             Object position
           </label>
           <input
@@ -198,12 +209,12 @@ export function ProjectImageDetailsForm({
             name="objectPosition"
             type="text"
             defaultValue={image.objectPosition ?? ""}
-            className={inputClass}
+            className={cInput}
             placeholder="e.g. center 30% 50%"
           />
         </div>
         <div>
-          <label htmlFor={`sort-${image.id}`} className={labelClass}>
+          <label htmlFor={`sort-${image.id}`} className={cLabel}>
             Sort order
           </label>
           <input
@@ -211,12 +222,12 @@ export function ProjectImageDetailsForm({
             name="sortOrder"
             type="number"
             defaultValue={image.sortOrder}
-            className={inputClass}
+            className={cInput}
           />
         </div>
-        <div className="flex flex-col gap-2 sm:col-span-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <SubmitDetailsButton dirty={dirty} />
+        <div className={`flex flex-col gap-2 ${compact ? "" : "sm:col-span-2"}`}>
+          <div className={`flex flex-wrap items-center ${compact ? "gap-x-2 gap-y-1" : "gap-x-3 gap-y-1"}`}>
+            <SubmitDetailsButton dirty={dirty} compact={compact} />
             {savedVisible ? (
               <span role="status" aria-live="polite" className="text-[11px] text-emerald-400/90 tabular-nums">
                 Saved

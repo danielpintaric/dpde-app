@@ -26,3 +26,39 @@ export async function listImagesByProjectId(
   const rows = (data ?? []) as ImageRow[];
   return rows.map(mapImageRow);
 }
+
+function compareImagesByGalleryOrder(a: Image, b: Image): number {
+  if (a.sortOrder !== b.sortOrder) {
+    return a.sortOrder - b.sortOrder;
+  }
+  return a.createdAt.localeCompare(b.createdAt);
+}
+
+/**
+ * All images belonging to the given projects (admin). Grouping/sorting per project is done in memory
+ * because PostgREST ordering is not per-`project_id` when using `in(...)`.
+ */
+export async function listImagesByProjectIds(projectIds: string[]): Promise<Image[]> {
+  if (projectIds.length === 0) {
+    return [];
+  }
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("images")
+    .select("*")
+    .in("project_id", projectIds);
+
+  if (error) {
+    throw supabaseReadError("images list by projects", error.message, error.code);
+  }
+
+  const rows = (data ?? []) as ImageRow[];
+  const images = rows.map(mapImageRow);
+  images.sort((a, b) => {
+    if (a.projectId !== b.projectId) {
+      return a.projectId.localeCompare(b.projectId);
+    }
+    return compareImagesByGalleryOrder(a, b);
+  });
+  return images;
+}

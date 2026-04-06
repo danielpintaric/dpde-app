@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
-import { SiteFooter } from "@/components/site-chrome";
-import { SiteHeader } from "@/components/site-header";
 import { PageTransition } from "@/components/page-transition";
+import { RootPublicShell } from "@/components/root-public-shell";
 import { getMetadataBaseUrl, getPublicConfig } from "@/lib/public-config";
 import "./globals.css";
 
@@ -52,9 +51,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full scroll-smooth antialiased`}
     >
       <body className="flex min-h-dvh flex-col bg-zinc-950 font-sans text-zinc-100">
-        <SiteHeader />
-        <PageTransition>{children}</PageTransition>
-        <SiteFooter />
+        <RootPublicShell>
+          <PageTransition>{children}</PageTransition>
+        </RootPublicShell>
       </body>
     </html>
   );

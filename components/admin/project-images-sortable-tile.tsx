@@ -13,9 +13,11 @@ type Props = {
   project: Project;
   positionLabel: string;
   isSelected: boolean;
+  isBulkSelected?: boolean;
   disabled: boolean;
   onSelect: (id: string) => void;
   onSelectableKeyDown: (e: React.KeyboardEvent, id: string) => void;
+  onBulkToggle?: (id: string) => void;
 };
 
 function IconStar({ className }: { className?: string }) {
@@ -51,9 +53,11 @@ export function ProjectImagesSortableTile({
   project,
   positionLabel,
   isSelected,
+  isBulkSelected = false,
   disabled,
   onSelect,
   onSelectableKeyDown,
+  onBulkToggle,
 }: Props) {
   const {
     attributes,
@@ -92,7 +96,7 @@ export function ProjectImagesSortableTile({
             ? "border-zinc-500/50 bg-zinc-900/70 shadow-xl shadow-black/50 ring-1 ring-white/10"
             : "",
           !isDragging && isSelected
-            ? "border-amber-400/45 bg-zinc-900/60 shadow-[0_0_24px_-8px_rgba(251,191,36,0.22)] ring-2 ring-amber-400/20"
+            ? "border-amber-400/45 bg-zinc-900/58 shadow-sm shadow-amber-900/15 ring-1 ring-amber-400/25"
             : "",
           !isDragging && !isSelected
             ? "border-zinc-800/85 shadow-black/20 hover:border-zinc-600/70 hover:bg-zinc-900/45 hover:shadow-md hover:shadow-black/30"
@@ -120,6 +124,19 @@ export function ProjectImagesSortableTile({
           <span className="min-w-0 flex-1 truncate text-[10px] font-medium tracking-wide text-zinc-500 transition-colors duration-200 group-hover/tile:text-zinc-400">
             Reihenfolge
           </span>
+          {onBulkToggle ? (
+            <label className="flex shrink-0 cursor-pointer items-center gap-1">
+              <input
+                type="checkbox"
+                checked={isBulkSelected}
+                disabled={disabled}
+                aria-label={`Mehrfachauswahl: ${identity}`}
+                onChange={() => onBulkToggle(img.id)}
+                onClick={(e) => e.stopPropagation()}
+                className="h-3.5 w-3.5 rounded border-zinc-600 bg-zinc-900 text-amber-500 focus:ring-1 focus:ring-amber-400/50"
+              />
+            </label>
+          ) : null}
         </div>
 
         <div
@@ -136,7 +153,7 @@ export function ProjectImagesSortableTile({
               src={preview}
               alt=""
               fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 34vw, 32vw"
               unoptimized
               className="object-cover object-center transition-[filter,transform] duration-200 ease-out group-hover/tile:brightness-[1.04]"
             />

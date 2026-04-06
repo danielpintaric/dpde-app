@@ -11,17 +11,22 @@ type Props = {
   mode: "create" | "edit";
   action: typeof createProjectAction | typeof updateProjectAction;
   project?: Project;
+  /** Schmale linke Spalte im Edit-Split (kein max-w-xl, engere Abstände, einspaltige Felder). */
+  compact?: boolean;
 };
 
 const labelClass = "mb-1 block text-[11px] font-medium uppercase tracking-wider text-zinc-500";
 const fieldClass =
   "w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none";
 
-export function ProjectForm({ mode, action, project }: Props) {
+export function ProjectForm({ mode, action, project, compact = false }: Props) {
   const [state, formAction, pending] = useActionState(action, null);
 
   return (
-    <form action={formAction} className="mx-auto max-w-xl space-y-5">
+    <form
+      action={formAction}
+      className={compact ? "space-y-4" : "mx-auto max-w-xl space-y-5"}
+    >
       {mode === "edit" && project ? (
         <input type="hidden" name="id" value={project.id} />
       ) : null}
@@ -79,13 +84,13 @@ export function ProjectForm({ mode, action, project }: Props) {
         <textarea
           id="description"
           name="description"
-          rows={5}
+          rows={compact ? 4 : 5}
           className={fieldClass}
           defaultValue={project?.description ?? ""}
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={`grid gap-4 ${compact ? "grid-cols-1" : "sm:grid-cols-2"}`}>
         <div>
           <label htmlFor="visibility" className={labelClass}>
             Visibility
@@ -116,7 +121,7 @@ export function ProjectForm({ mode, action, project }: Props) {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={`grid gap-4 ${compact ? "grid-cols-1" : "sm:grid-cols-2"}`}>
         <div>
           <label htmlFor="category" className={labelClass}>
             Category

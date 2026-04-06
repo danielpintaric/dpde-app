@@ -5,6 +5,7 @@ import { revalidatePortfolioSync } from "@/lib/admin/revalidate-portfolio-sync";
 import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import {
   deleteAdminProjectImage,
+  deleteAdminProjectImagesBulk,
   reorderAdminProjectImages,
   setAdminProjectCoverImage,
   updateAdminImageDetails,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/services/admin-images";
 
 export type ReorderProjectImagesResult = { ok: true } | { ok: false; error: string };
+export type BulkDeleteProjectImagesResult = { ok: true } | { ok: false; error: string };
 
 export async function deleteProjectImageAction(formData: FormData) {
   await requireAdminSession();
@@ -37,6 +39,28 @@ export async function setProjectCoverImageAction(formData: FormData) {
   await setAdminProjectCoverImage(projectId, imageId);
   revalidatePortfolioSync(projectId, projectSlug);
   redirect(`/admin/projects/${projectId}/edit`);
+}
+
+export async function deleteProjectImagesBulkAction(
+  projectId: string,
+  projectSlug: string | null,
+  imageIds: string[],
+): Promise<BulkDeleteProjectImagesResult> {
+  await requireAdminSession();
+  const pid = String(projectId ?? "").trim();
+  const slugRaw = String(projectSlug ?? "").trim();
+  const slug = slugRaw || null;
+  if (!pid || !Array.isArray(imageIds) || imageIds.length === 0) {
+    return { ok: false, error: "Ungültige Daten." };
+  }
+  try {
+    await deleteAdminProjectImagesBulk(pid, imageIds);
+    revalidatePortfolioSync(pid, slug);
+    return { ok: true };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Löschen fehlgeschlagen.";
+    return { ok: false, error: message };
+  }
 }
 
 export async function reorderProjectImagesAction(

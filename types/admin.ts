@@ -1,4 +1,4 @@
-import type { GalleryLayoutType, ProjectVisibility } from "@/types/project";
+import type { GalleryLayoutType, Image, Project, ProjectVisibility } from "@/types/project";
 
 /** Payload for creating or updating a project (admin). */
 export type AdminProjectUpsert = {
@@ -12,4 +12,11 @@ export type AdminProjectUpsert = {
   year: string | null;
   location: string | null;
   layoutType: GalleryLayoutType;
+};
+
+/** One row in the admin projects list (project + thumbnail + counts). */
+export type AdminProjectListEntry = {
+  project: Project;
+  imageCount: number;
+  coverImage: Image | null;
 };

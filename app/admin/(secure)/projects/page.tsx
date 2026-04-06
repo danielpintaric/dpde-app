@@ -1,63 +1,76 @@
 import Link from "next/link";
-import { listAdminProjects } from "@/lib/services/admin-projects";
+import { AdminProjectHeroCard } from "@/components/admin/admin-project-hero-card";
+import { AdminProjectListItem } from "@/components/admin/admin-project-list-item";
+import { listAdminProjectsWithSummary } from "@/lib/services/admin-projects";
+
+const HERO_PROJECT_COUNT = 2;
 
 export default async function AdminProjectsPage() {
-  const projects = await listAdminProjects();
+  const entries = await listAdminProjectsWithSummary();
+  const heroEntries = entries.slice(0, HERO_PROJECT_COUNT);
+  const listEntries = entries.slice(HERO_PROJECT_COUNT);
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="font-serif text-2xl tracking-tight text-zinc-100">Projects</h1>
+    <div className="max-w-6xl">
+      <div className="mb-10 flex flex-col gap-4 border-b border-zinc-800/90 pb-8 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-serif text-2xl tracking-tight text-zinc-100 sm:text-3xl">Projects</h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-500">
+            Overview of all portfolio projects. Open a row to edit details and images.
+          </p>
+        </div>
         <Link
           href="/admin/projects/new"
-          className="rounded bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-950 hover:bg-white"
+          className="inline-flex shrink-0 items-center justify-center rounded-xl border border-zinc-600/60 bg-zinc-100 px-4 py-2.5 text-xs font-medium text-zinc-950 shadow-sm transition-colors hover:border-zinc-400 hover:bg-white"
         >
           New project
         </Link>
       </div>
 
-      {projects.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          No projects yet.{" "}
-          <Link href="/admin/projects/new" className="text-zinc-400 underline">
-            Create one
+      {entries.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-zinc-800/90 bg-zinc-950/40 px-6 py-16 text-center shadow-sm shadow-black/10">
+          <p className="mx-auto max-w-md text-sm leading-relaxed text-zinc-500">
+            No projects yet. Create one to start building your portfolio catalog.
+          </p>
+          <Link
+            href="/admin/projects/new"
+            className="mt-6 inline-flex items-center justify-center rounded-xl border border-zinc-600/60 bg-zinc-100 px-4 py-2.5 text-xs font-medium text-zinc-950 transition-colors hover:bg-white"
+          >
+            Create project
           </Link>
-          .
-        </p>
-      ) : (
-        <div className="overflow-x-auto rounded border border-zinc-800">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="border-b border-zinc-800 bg-zinc-900/80 text-[11px] uppercase tracking-wider text-zinc-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">Title</th>
-                <th className="px-4 py-3 font-medium">Slug</th>
-                <th className="px-4 py-3 font-medium">Visibility</th>
-                <th className="px-4 py-3 font-medium">Sort</th>
-                <th className="px-4 py-3 font-medium">Year</th>
-                <th className="px-4 py-3 font-medium" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800">
-              {projects.map((p) => (
-                <tr key={p.id} className="text-zinc-300">
-                  <td className="px-4 py-3 text-zinc-100">{p.title}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-zinc-400">{p.slug}</td>
-                  <td className="px-4 py-3">{p.visibility}</td>
-                  <td className="px-4 py-3 tabular-nums">{p.sortOrder}</td>
-                  <td className="px-4 py-3 text-zinc-500">{p.year ?? "—"}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/projects/${p.id}/edit`}
-                      className="text-xs text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline"
-                    >
-                      Edit
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
+      ) : (
+        <>
+          {heroEntries.length > 0 ? (
+            <div
+              className={`grid gap-4 md:gap-5 ${
+                heroEntries.length === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"
+              }`}
+            >
+              {heroEntries.map((entry) => (
+                <AdminProjectHeroCard key={entry.project.id} entry={entry} />
+              ))}
+            </div>
+          ) : null}
+
+          {listEntries.length > 0 ? (
+            <section className="mt-8 md:mt-10" aria-labelledby="admin-more-projects-heading">
+              <h2
+                id="admin-more-projects-heading"
+                className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500"
+              >
+                Weitere Projekte
+              </h2>
+              <ul className="mt-4 flex list-none flex-col gap-2.5 sm:mt-5 sm:gap-3.5">
+                {listEntries.map((entry) => (
+                  <li key={entry.project.id}>
+                    <AdminProjectListItem entry={entry} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </>
       )}
     </div>
   );

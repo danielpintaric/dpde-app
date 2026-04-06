@@ -84,6 +84,20 @@ export async function deleteAdminProjectImage(
   }
 }
 
+/** Mehrere Bilder löschen; pro ID dieselbe Logik wie {@link deleteAdminProjectImage}. */
+export async function deleteAdminProjectImagesBulk(
+  projectId: string,
+  imageIds: string[],
+): Promise<void> {
+  const unique = [...new Set(imageIds.map((id) => id.trim()).filter(Boolean))];
+  if (unique.length === 0) {
+    return;
+  }
+  for (const imageId of unique) {
+    await deleteAdminProjectImage(imageId, projectId);
+  }
+}
+
 export async function setAdminProjectCoverImage(
   projectId: string,
   imageId: string,

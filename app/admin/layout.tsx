@@ -8,5 +8,7 @@ export const metadata: Metadata = {
 export default function AdminRootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return children;
+  return (
+    <div className="min-h-dvh bg-zinc-950 text-zinc-100 [color-scheme:dark]">{children}</div>
+  );
 }
