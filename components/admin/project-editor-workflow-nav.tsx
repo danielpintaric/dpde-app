@@ -11,9 +11,9 @@ type Props = {
 };
 
 const toolLink =
-  "rounded-md px-2 py-1 text-[11px] font-medium text-zinc-400 outline-none transition-colors duration-200 hover:bg-white/5 hover:text-zinc-200 focus-visible:ring-2 focus-visible:ring-amber-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 sm:text-[12px]";
+  "rounded-md px-2 py-1 text-[11px] font-medium text-zinc-500 outline-none transition-colors duration-200 hover:bg-white/[0.04] hover:text-zinc-300 focus-visible:ring-2 focus-visible:ring-zinc-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 sm:text-[12px]";
 
-const navLinkActive = `${toolLink} text-zinc-300 hover:text-zinc-100`;
+const navLinkActive = `${toolLink} text-zinc-400 hover:text-zinc-100`;
 
 const navDisabled =
   "cursor-default rounded-md px-2 py-1 text-[11px] font-medium text-zinc-600 sm:text-[12px]";
@@ -68,11 +68,11 @@ export function ProjectEditorWorkflowNav({
 
   return (
     <header className="mb-3 border-b border-zinc-800/80 pb-2 sm:mb-3 sm:pb-2.5">
-      <p className="mb-0 font-mono text-[10px] font-medium uppercase leading-none tracking-[0.12em] text-zinc-600">
+      <p className="mb-0 font-mono text-[10px] font-medium uppercase leading-none tracking-[0.14em] text-zinc-600/85">
         Edit project
       </p>
-      <div className="mt-1 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-x-6">
-        <h1 className="order-2 min-w-0 flex-1 truncate font-serif text-2xl tracking-tight text-zinc-100 sm:order-1 sm:pr-4 sm:text-[1.65rem]">
+      <div className="mt-1.5 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-x-6">
+        <h1 className="order-2 min-w-0 flex-1 truncate font-serif text-2xl font-semibold tracking-tight text-zinc-50 sm:order-1 sm:pr-4 sm:text-[1.7rem] sm:leading-tight">
           {project.title}
         </h1>
         <div className="order-1 flex min-w-0 justify-end sm:order-2 sm:shrink-0">

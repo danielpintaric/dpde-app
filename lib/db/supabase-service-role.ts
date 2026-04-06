@@ -34,7 +34,7 @@ export function createSupabaseServiceRoleClient(): SupabaseClient {
   const key = getOptionalSupabaseServiceRoleKey();
   if (!key) {
     throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY fehlt. Admin-Uploads in den Storage setzen diese Variable serverseitig voraus (z. B. Vercel → Environment Variables).",
+      "Missing SUPABASE_SERVICE_ROLE_KEY. Required for admin storage (set server-side, e.g. Vercel env).",
     );
   }
 

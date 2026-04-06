@@ -51,14 +51,14 @@ export async function deleteProjectImagesBulkAction(
   const slugRaw = String(projectSlug ?? "").trim();
   const slug = slugRaw || null;
   if (!pid || !Array.isArray(imageIds) || imageIds.length === 0) {
-    return { ok: false, error: "Ungültige Daten." };
+    return { ok: false, error: "Invalid request." };
   }
   try {
     await deleteAdminProjectImagesBulk(pid, imageIds);
     revalidatePortfolioSync(pid, slug);
     return { ok: true };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Löschen fehlgeschlagen.";
+    const message = e instanceof Error ? e.message : "Delete failed.";
     return { ok: false, error: message };
   }
 }
@@ -73,14 +73,14 @@ export async function reorderProjectImagesAction(
   const slugRaw = String(projectSlug ?? "").trim();
   const slug = slugRaw || null;
   if (!pid || !Array.isArray(orderedImageIds) || orderedImageIds.length === 0) {
-    return { ok: false, error: "Ungültige Daten." };
+    return { ok: false, error: "Invalid request." };
   }
   try {
     await reorderAdminProjectImages(pid, orderedImageIds);
     revalidatePortfolioSync(pid, slug);
     return { ok: true };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Sortierung fehlgeschlagen.";
+    const message = e instanceof Error ? e.message : "Reorder failed.";
     return { ok: false, error: message };
   }
 }

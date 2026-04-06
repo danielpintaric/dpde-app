@@ -17,11 +17,11 @@ export type AdminApiAuthResult =
 export async function requireAdminUserForApi(): Promise<AdminApiAuthResult> {
   const user = await getSessionUser();
   if (!user) {
-    return { ok: false, status: 401, error: "Nicht angemeldet." };
+    return { ok: false, status: 401, error: "Not authenticated." };
   }
   const allowlist = parseAdminEmailAllowlist(process.env.ADMIN_EMAILS);
   if (!isEmailInAdminAllowlist(user.email, allowlist)) {
-    return { ok: false, status: 403, error: "Keine Berechtigung." };
+    return { ok: false, status: 403, error: "Forbidden." };
   }
   return { ok: true, user };
 }

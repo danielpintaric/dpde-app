@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     formData = await request.formData();
   } catch {
     return NextResponse.json(
-      { error: "Ungültiger Request-Body (FormData erwartet)." },
+      { error: "Invalid request body (FormData expected)." },
       { status: 400 },
     );
   }
@@ -26,13 +26,13 @@ export async function POST(request: Request) {
   const projectSlug = projectSlugRaw || null;
 
   if (!projectId) {
-    return NextResponse.json({ error: "Projekt-ID fehlt." }, { status: 400 });
+    return NextResponse.json({ error: "Missing project id." }, { status: 400 });
   }
 
   const rawFiles = formData.getAll("files").filter((f): f is File => f instanceof File);
 
   if (rawFiles.length === 0) {
-    return NextResponse.json({ error: "Keine Datei ausgewählt." }, { status: 400 });
+    return NextResponse.json({ error: "No files selected." }, { status: 400 });
   }
 
   const { accepted, rejectedReason } = filterValidProjectImageFiles(rawFiles);
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   }
   if (accepted.length === 0) {
     return NextResponse.json(
-      { error: "Keine gültigen Bilddateien (JPEG, PNG, WebP, GIF, AVIF)." },
+      { error: "No valid image files (JPEG, PNG, WebP, GIF, AVIF)." },
       { status: 400 },
     );
   }
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   try {
     await uploadFilesToProject(projectId, accepted);
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Upload fehlgeschlagen.";
+    const message = e instanceof Error ? e.message : "Upload failed.";
     logServerError("admin-project-image-upload", message);
     return NextResponse.json({ error: message }, { status: 400 });
   }

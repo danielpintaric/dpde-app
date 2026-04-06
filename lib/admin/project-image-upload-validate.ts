@@ -46,14 +46,13 @@ export function filterValidProjectImageFiles(files: File[]): {
     if (file.size > MAX_PROJECT_IMAGE_BYTES) {
       return {
         accepted: [],
-        rejectedReason: `Datei zu groß (max. ${Math.round(MAX_PROJECT_IMAGE_BYTES / (1024 * 1024))} MB pro Bild).`,
+        rejectedReason: `File too large (max. ${Math.round(MAX_PROJECT_IMAGE_BYTES / (1024 * 1024))} MB per image).`,
       };
     }
     if (!isAllowedProjectImageFile(file)) {
       return {
         accepted: [],
-        rejectedReason:
-          "Nur Bilder im Format JPEG, PNG, WebP, GIF oder AVIF sind erlaubt.",
+        rejectedReason: "Only JPEG, PNG, WebP, GIF, or AVIF images allowed.",
       };
     }
     accepted.push(file);

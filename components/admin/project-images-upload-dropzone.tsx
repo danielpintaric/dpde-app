@@ -38,7 +38,7 @@ export function ProjectImagesUploadDropzone({ projectId, projectSlug }: Props) {
       setError(null);
       setSuccess(null);
       if (files.length === 0) {
-        setError("Keine gültigen Bilddateien.");
+        setError("No valid image files.");
         return;
       }
       setPending(true);
@@ -50,8 +50,8 @@ export function ProjectImagesUploadDropzone({ projectId, projectSlug }: Props) {
         }
         setSuccess(
           result.uploadedCount === 1
-            ? "1 Bild hochgeladen."
-            : `${result.uploadedCount} Bilder hochgeladen.`,
+            ? "1 image uploaded."
+            : `${result.uploadedCount} images uploaded.`,
         );
         if (inputRef.current) inputRef.current.value = "";
         router.refresh();
@@ -154,13 +154,13 @@ export function ProjectImagesUploadDropzone({ projectId, projectSlug }: Props) {
       ) : null}
 
       <label htmlFor={inputId} className="sr-only">
-        Bilddateien zum Hochladen auswählen
+        Choose image files to upload
       </label>
 
       <div
         role="button"
         tabIndex={0}
-        aria-label="Bilder per Drag and Drop oder Klick hochladen"
+        aria-label="Upload images via drag-and-drop or click"
         aria-disabled={pending}
         onClick={openPicker}
         onKeyDown={onKeyDownZone}
@@ -169,30 +169,30 @@ export function ProjectImagesUploadDropzone({ projectId, projectSlug }: Props) {
         onDragLeave={onDragLeave}
         onDragOver={onDragOver}
         className={[
-          "relative cursor-pointer rounded-xl border border-dashed px-4 py-10 text-center transition-[border-color,background-color,box-shadow,opacity] duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-amber-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950",
+          "relative cursor-pointer rounded-xl border border-dashed px-4 py-10 text-center transition-[border-color,background-color,box-shadow,opacity] duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950",
           pending ? "pointer-events-none opacity-60" : "",
           fileDragOver && !pending
-            ? "border-amber-500/35 bg-amber-950/15 shadow-[0_0_28px_-12px_rgba(251,191,36,0.25)]"
+            ? "border-zinc-500/45 bg-zinc-900/45 shadow-[0_0_24px_-12px_rgba(0,0,0,0.45)]"
             : "border-zinc-700/55 bg-zinc-950/40 hover:border-zinc-600/55 hover:bg-zinc-900/35",
         ].join(" ")}
       >
         <p className="text-sm font-medium text-zinc-300">
-          Bilder hierher ziehen
+          Drop images here
           <span className="mx-2 text-zinc-600">·</span>
-          <span className="text-zinc-400">oder klicken zum Auswählen</span>
+          <span className="text-zinc-400">or click to browse</span>
         </p>
         <p className="mt-2 text-[11px] text-zinc-500">
-          JPEG, PNG, WebP, GIF, AVIF · mehrere Dateien möglich
+          JPEG, PNG, WebP, GIF, AVIF · multiple files ok
         </p>
         {pending ? (
-          <p className="mt-3 text-[11px] font-medium tracking-wide text-amber-200/85">
-            Upload läuft …
+          <p className="mt-3 text-[11px] font-medium tracking-wide text-zinc-400">
+            Uploading…
           </p>
         ) : null}
       </div>
 
       <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
-        Speicherort: Bucket <code className="text-zinc-500">project-images</code>, Pfad{" "}
+        Storage: bucket <code className="text-zinc-500">project-images</code>, path{" "}
         <code className="text-zinc-500">projects/{`{id}`}/original/</code>
       </p>
     </div>

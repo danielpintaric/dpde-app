@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireAdminSession } from "@/lib/auth/require-admin-session";
 import {
   createAdminProject,
+  getAdminProjectById,
   saveAdminProject,
 } from "@/lib/services/admin-projects";
 import type { AdminProjectUpsert } from "@/types/admin";
@@ -13,6 +14,51 @@ import type { GalleryLayoutType, ProjectVisibility } from "@/types/project";
 export type AdminProjectFormState = {
   error?: string;
 } | null;
+
+export type UpdateProjectVisibilityResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function updateProjectVisibilityAction(
+  projectId: string,
+  visibility: string,
+): Promise<UpdateProjectVisibilityResult> {
+  await requireAdminSession();
+  const id = String(projectId ?? "").trim();
+  if (!id) {
+    return { ok: false, error: "Missing project id." };
+  }
+  if (visibility !== "public" && visibility !== "unlisted" && visibility !== "private") {
+    return { ok: false, error: "Invalid visibility." };
+  }
+  const project = await getAdminProjectById(id);
+  if (!project) {
+    return { ok: false, error: "Project not found." };
+  }
+  const input: AdminProjectUpsert = {
+    slug: project.slug,
+    title: project.title,
+    subtitle: project.subtitle,
+    description: project.description,
+    visibility: visibility as ProjectVisibility,
+    sortOrder: project.sortOrder,
+    category: project.category,
+    year: project.year,
+    location: project.location,
+    layoutType: project.layoutType,
+  };
+  try {
+    await saveAdminProject(id, input);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Unable to save.";
+    return { ok: false, error: message };
+  }
+  revalidatePath("/admin/projects");
+  revalidatePath("/portfolio");
+  revalidatePath(`/portfolio/${input.slug}`);
+  revalidatePath("/");
+  return { ok: true };
+}
 
 function parseUpsert(formData: FormData): AdminProjectUpsert {
   const slug = String(formData.get("slug") ?? "").trim();
@@ -66,7 +112,7 @@ export async function createProjectAction(
     const input = parseUpsert(formData);
     await createAdminProject(input);
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Save failed.";
+    const message = e instanceof Error ? e.message : "Unable to save.";
     return { error: message };
   }
   revalidatePath("/admin/projects");
@@ -89,7 +135,7 @@ export async function updateProjectAction(
     input = parseUpsert(formData);
     await saveAdminProject(id, input);
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Save failed.";
+    const message = e instanceof Error ? e.message : "Unable to save.";
     return { error: message };
   }
   revalidatePath("/admin/projects");

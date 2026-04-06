@@ -1,17 +1,5 @@
 import type { Project, ProjectVisibility } from "@/types/project";
 
-export function visibilityBadgeClass(v: ProjectVisibility): string {
-  switch (v) {
-    case "public":
-      return "border-emerald-900/50 bg-emerald-950/35 text-emerald-200/90";
-    case "unlisted":
-      return "border-amber-900/45 bg-amber-950/30 text-amber-200/85";
-    case "private":
-    default:
-      return "border-zinc-700/60 bg-zinc-900/50 text-zinc-400";
-  }
-}
-
 export function visibilityLabel(v: ProjectVisibility): string {
   switch (v) {
     case "public":
@@ -33,6 +21,17 @@ export function yearHint(project: Project): string | null {
   const d = new Date(project.createdAt);
   const n = d.getFullYear();
   return Number.isNaN(n) ? null : String(n);
+}
+
+/** Category label for list cards (trimmed or null). */
+export function categoryHint(project: Project): string | null {
+  const c = project.category?.trim();
+  return c || null;
+}
+
+/** Ruhige, neutrale Chips für Übersichtsseiten (ohne Farbakzente). */
+export function visibilityBadgeClassNeutral(): string {
+  return "border-zinc-700/50 bg-zinc-950/55 text-zinc-500";
 }
 
 export function imageCountLabel(n: number): string {

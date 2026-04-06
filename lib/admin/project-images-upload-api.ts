@@ -31,7 +31,7 @@ export async function uploadProjectImagesFiles(
   files: File[],
 ): Promise<UploadProjectImagesResult> {
   if (files.length === 0) {
-    return { ok: false, error: "Keine Dateien ausgewählt." };
+    return { ok: false, error: "No files selected." };
   }
 
   const body = new FormData();
@@ -57,7 +57,7 @@ export async function uploadProjectImagesFiles(
     if (!res.ok) {
       return {
         ok: false,
-        error: errorFromPayload(data) ?? `Upload fehlgeschlagen (${res.status}).`,
+        error: errorFromPayload(data) ?? `Upload failed (${res.status}).`,
       };
     }
 
@@ -65,11 +65,11 @@ export async function uploadProjectImagesFiles(
       return { ok: true, uploadedCount: data.uploadedCount };
     }
 
-    return { ok: false, error: errorFromPayload(data) ?? "Unerwartete Server-Antwort." };
+    return { ok: false, error: errorFromPayload(data) ?? "Unexpected server response." };
   } catch {
     return {
       ok: false,
-      error: "Netzwerkfehler. Bitte Verbindung prüfen und erneut versuchen.",
+      error: "Network error. Retry.",
     };
   }
 }

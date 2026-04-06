@@ -91,17 +91,19 @@ export function ProjectImagesSortableTile({
     <li ref={setNodeRef} style={style} className="min-w-0 list-none">
       <div
         className={[
-          "group/tile flex min-w-0 flex-col overflow-hidden rounded-xl border bg-zinc-950/55 shadow-sm transition-[border-color,box-shadow,background-color] duration-200 ease-out",
+          "group/tile relative flex min-w-0 flex-col overflow-hidden rounded-xl border bg-zinc-950/55 shadow-sm transition-[border-color,box-shadow,background-color] duration-200 ease-out",
           isDragging
-            ? "border-zinc-500/50 bg-zinc-900/70 shadow-xl shadow-black/50 ring-1 ring-white/10"
+            ? "z-10 border-zinc-500/50 bg-zinc-900/70 shadow-xl shadow-black/50 ring-1 ring-white/10"
             : "",
           !isDragging && isSelected
-            ? "border-amber-400/45 bg-zinc-900/58 shadow-sm shadow-amber-900/15 ring-1 ring-amber-400/25"
+            ? "border-zinc-400/45 bg-zinc-900/62 shadow-md shadow-black/30 ring-1 ring-zinc-100/12"
             : "",
           !isDragging && !isSelected
-            ? "border-zinc-800/85 shadow-black/20 hover:border-zinc-600/70 hover:bg-zinc-900/45 hover:shadow-md hover:shadow-black/30"
+            ? `border-zinc-800/85 shadow-black/20 hover:border-zinc-600/70 hover:bg-zinc-900/45 hover:shadow-md hover:shadow-black/25${
+                isBulkSelected ? " shadow-[inset_3px_0_0_0_rgba(56,189,248,0.22)]" : ""
+              }`
             : "",
-          dropTarget ? "ring-1 ring-inset ring-emerald-400/25 border-zinc-600/50" : "",
+          dropTarget ? "border-zinc-600/50 ring-1 ring-inset ring-emerald-400/20" : "",
         ].join(" ")}
       >
         <div className="flex items-center gap-1.5 border-b border-zinc-800/55 bg-zinc-900/25 px-2 py-1.5 transition-colors duration-200 group-hover/tile:bg-zinc-900/40">
@@ -111,8 +113,8 @@ export function ProjectImagesSortableTile({
             {...attributes}
             {...listeners}
             disabled={disabled}
-            aria-label={`Reihenfolge ändern: ${identity}`}
-            title="Zum Sortieren ziehen"
+            aria-label={`Reorder: ${identity}`}
+            title="Drag to reorder"
             className="flex h-7 w-7 shrink-0 cursor-grab touch-none select-none items-center justify-center rounded-md text-zinc-500 outline-none transition-colors duration-200 hover:bg-zinc-800/80 hover:text-zinc-300 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
           >
             <span className="flex flex-col gap-0.5 opacity-80" aria-hidden>
@@ -122,7 +124,7 @@ export function ProjectImagesSortableTile({
             </span>
           </button>
           <span className="min-w-0 flex-1 truncate text-[10px] font-medium tracking-wide text-zinc-500 transition-colors duration-200 group-hover/tile:text-zinc-400">
-            Reihenfolge
+            Order
           </span>
           {onBulkToggle ? (
             <label className="flex shrink-0 cursor-pointer items-center gap-1">
@@ -130,10 +132,10 @@ export function ProjectImagesSortableTile({
                 type="checkbox"
                 checked={isBulkSelected}
                 disabled={disabled}
-                aria-label={`Mehrfachauswahl: ${identity}`}
+                aria-label={`Multi-select: ${identity}`}
                 onChange={() => onBulkToggle(img.id)}
                 onClick={(e) => e.stopPropagation()}
-                className="h-3.5 w-3.5 rounded border-zinc-600 bg-zinc-900 text-amber-500 focus:ring-1 focus:ring-amber-400/50"
+                className="h-3.5 w-3.5 rounded border-zinc-600 bg-zinc-900 text-zinc-200 focus:ring-1 focus:ring-zinc-500/50"
               />
             </label>
           ) : null}
@@ -143,10 +145,10 @@ export function ProjectImagesSortableTile({
           role="button"
           tabIndex={0}
           aria-pressed={isSelected}
-          aria-label={`Bild auswählen: ${identity}`}
+          aria-label={`Select image: ${identity}`}
           onClick={() => onSelect(img.id)}
           onKeyDown={(e) => onSelectableKeyDown(e, img.id)}
-          className="cursor-pointer outline-none transition-[opacity] duration-200 focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+          className="cursor-pointer outline-none transition-[opacity] duration-200 focus-visible:ring-2 focus-visible:ring-zinc-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
         >
           <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-900">
             <NextImage
@@ -155,21 +157,21 @@ export function ProjectImagesSortableTile({
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 34vw, 32vw"
               unoptimized
-              className="object-cover object-center transition-[filter,transform] duration-200 ease-out group-hover/tile:brightness-[1.04]"
+              className="object-cover object-center transition-[filter,transform] duration-200 ease-out group-hover/tile:brightness-[1.03] group-hover/tile:saturate-[1.02]"
             />
             <span
-              className="pointer-events-none absolute right-2 top-2 rounded-full border border-zinc-700/60 bg-zinc-950/85 px-2 py-0.5 font-mono text-[10px] tabular-nums text-zinc-300 shadow-sm backdrop-blur-sm"
-              title="Position in der Galerie"
+              className="pointer-events-none absolute right-2 top-2 rounded border border-zinc-700/45 bg-zinc-950/92 px-1.5 py-px font-mono text-[9px] tabular-nums text-zinc-400"
+              title="Gallery position"
             >
               {positionLabel}
             </span>
             {img.externalUrl?.trim() ? (
-              <span className="pointer-events-none absolute left-2 top-2 rounded-full border border-zinc-700/50 bg-zinc-950/80 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-zinc-400 shadow-sm">
+              <span className="pointer-events-none absolute left-2 top-2 rounded border border-zinc-700/45 bg-zinc-950/92 px-1.5 py-px text-[8px] font-medium uppercase tracking-[0.1em] text-zinc-500">
                 Legacy
               </span>
             ) : null}
             {isCover ? (
-              <span className="pointer-events-none absolute bottom-2 left-2 rounded-full border border-amber-700/35 bg-amber-950/55 px-2.5 py-1 text-[10px] font-medium tracking-wide text-amber-100/90 shadow-sm backdrop-blur-[2px]">
+              <span className="pointer-events-none absolute bottom-2 left-2 rounded border border-zinc-600/40 bg-zinc-900/88 px-1.5 py-px text-[9px] font-medium uppercase tracking-[0.12em] text-zinc-300/90">
                 Cover
               </span>
             ) : null}
@@ -191,9 +193,9 @@ export function ProjectImagesSortableTile({
               <input type="hidden" name="projectSlug" value={project.slug} />
               <button
                 type="submit"
-                title="Als Cover setzen"
-                aria-label="Als Cover setzen"
-                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-zinc-700/45 bg-zinc-900/30 text-zinc-500 transition-[border-color,background-color,color,box-shadow] duration-200 ease-out hover:border-amber-800/40 hover:bg-amber-950/25 hover:text-amber-200/90 hover:shadow-[0_0_12px_-4px_rgba(251,191,36,0.2)]"
+                title="Set as cover"
+                aria-label="Set as cover"
+                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-zinc-700/45 bg-zinc-900/30 text-zinc-500 transition-[border-color,background-color,color] duration-200 ease-out hover:border-zinc-500/60 hover:bg-zinc-800/45 hover:text-zinc-200"
               >
                 <IconStar className="opacity-90" />
               </button>
@@ -201,20 +203,32 @@ export function ProjectImagesSortableTile({
           ) : (
             <span
               className="mr-auto py-1 pl-0.5 text-[10px] font-medium tracking-wide text-zinc-600"
-              title="Dieses Bild ist das Cover"
+              title="This image is the cover"
             >
-              Cover aktiv
+              Current cover
             </span>
           )}
 
-          <form action={deleteProjectImageAction} className="shrink-0">
+          <form
+            action={deleteProjectImageAction}
+            className="shrink-0"
+            onSubmit={(e) => {
+              if (
+                !window.confirm(
+                  "Permanently delete this image? This cannot be undone.",
+                )
+              ) {
+                e.preventDefault();
+              }
+            }}
+          >
             <input type="hidden" name="projectId" value={project.id} />
             <input type="hidden" name="imageId" value={img.id} />
             <input type="hidden" name="projectSlug" value={project.slug} />
             <button
               type="submit"
-              title="Bild löschen"
-              aria-label="Bild löschen"
+              title="Permanently delete image (cannot be undone)"
+              aria-label="Permanently delete image"
               className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-red-950/40 bg-red-950/15 text-red-400/80 transition-[border-color,background-color,color] duration-200 ease-out hover:border-red-900/55 hover:bg-red-950/28 hover:text-red-300"
             >
               <IconTrash className="opacity-90" />

@@ -23,6 +23,7 @@ import {
   deleteProjectImagesBulkAction,
   reorderProjectImagesAction,
 } from "@/lib/actions/admin-image-actions";
+import { useProjectEditorSession } from "@/components/admin/project-editor-session-context";
 import { ProjectImageDetailsForm } from "@/components/admin/project-image-details-form";
 import { ProjectImagesSortableTile } from "@/components/admin/project-images-sortable-tile";
 import {
@@ -61,6 +62,7 @@ function syncKeyFromImages(images: Image[]): string {
 
 export function ProjectImagesGridPanel({ project, images, savedImageId }: Props) {
   const router = useRouter();
+  const editorSession = useProjectEditorSession();
   const presetValues = new Set(ADMIN_IMAGE_ASPECT_PRESETS.map((p) => p.value));
 
   const [selectedId, setSelectedId] = useState<string | null>(() =>
@@ -129,8 +131,8 @@ export function ProjectImagesGridPanel({ project, images, savedImageId }: Props)
     if (
       !window.confirm(
         n === 1
-          ? "Dieses Bild wirklich löschen?"
-          : `${n} Bilder wirklich löschen?`,
+          ? "Permanently delete this image? This cannot be undone."
+          : `Permanently delete ${n} images? This cannot be undone.`,
       )
     ) {
       return;
@@ -185,6 +187,14 @@ export function ProjectImagesGridPanel({ project, images, savedImageId }: Props)
   const inspectorPreviewH =
     selectedImage?.height != null && selectedImage.height > 0 ? selectedImage.height : 1200;
 
+  useEffect(() => {
+    if (selectedImage || !editorSession) {
+      return;
+    }
+    editorSession.setImageDetailsDirty(false);
+    editorSession.setImageDetailsSaving(false);
+  }, [selectedImage, editorSession]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -234,23 +244,18 @@ export function ProjectImagesGridPanel({ project, images, savedImageId }: Props)
     <div className="flex flex-col gap-8 xl:gap-10">
       <div className="min-w-0 space-y-4">
         <p className="max-w-2xl text-[11px] leading-relaxed tracking-wide text-zinc-500">
-          <span className="text-zinc-400">Sortierung</span>
+          <span className="text-zinc-400">Order</span>
           <span className="mx-1.5 text-zinc-700">·</span>
-          Oberen Griff ziehen. Reihenfolge wird als <span className="tabular-nums text-zinc-500">0 … n−1</span>{" "}
-          gespeichert.
+          Drag the top handle. Sort index <span className="tabular-nums text-zinc-500">0 … n−1</span>.
           <span className="mx-1.5 text-zinc-700">·</span>
-          <span className="text-zinc-400">Mehrfachauswahl</span> per Kästchen auf dem Bild.
+          <span className="text-zinc-400">Multi-select</span> — checkbox on each tile.
           {orderSaving ? (
-            <span className="ml-2 font-medium text-amber-200/80 transition-colors duration-200">
-              Speichert …
-            </span>
+            <span className="ml-2 font-medium text-zinc-400 transition-colors duration-200">Saving…</span>
           ) : null}
         </p>
         {bulkCount > 0 ? (
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-zinc-800/80 bg-zinc-950/55 px-3 py-2.5 text-xs shadow-sm shadow-black/15">
-            <span className="font-medium tabular-nums text-zinc-300">
-              {bulkCount} ausgewählt
-            </span>
+            <span className="font-medium tabular-nums text-zinc-300">{bulkCount} selected</span>
             <div className="ml-auto flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -258,7 +263,7 @@ export function ProjectImagesGridPanel({ project, images, savedImageId }: Props)
                 onClick={runBulkDelete}
                 className="cursor-pointer rounded-lg border border-red-950/50 bg-red-950/20 px-2.5 py-1.5 text-[11px] font-medium text-red-300/90 transition-colors hover:border-red-900/60 hover:bg-red-950/30 disabled:cursor-not-allowed disabled:opacity-45"
               >
-                {bulkDeleting ? "Löschen…" : "Löschen"}
+                {bulkDeleting ? "Deleting…" : "Delete"}
               </button>
               <button
                 type="button"
@@ -266,7 +271,7 @@ export function ProjectImagesGridPanel({ project, images, savedImageId }: Props)
                 onClick={clearBulk}
                 className="cursor-pointer rounded-lg border border-zinc-700/60 bg-zinc-900/40 px-2.5 py-1.5 text-[11px] font-medium text-zinc-400 transition-colors hover:border-zinc-600 hover:bg-zinc-800/50 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-45"
               >
-                Auswahl aufheben
+                Clear selection
               </button>
             </div>
           </div>
@@ -283,12 +288,12 @@ export function ProjectImagesGridPanel({ project, images, savedImageId }: Props)
         ) : null}
         {images.length === 0 ? (
           <p className="text-sm leading-relaxed text-zinc-600">
-            Noch keine Bilder – oben in die Ablage ziehen oder dort klicken.
+            No images yet — use the drop zone above.
           </p>
         ) : null}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,360px)] lg:items-start lg:gap-8 xl:gap-9">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,360px)] lg:items-start lg:gap-x-9 lg:gap-y-6 xl:gap-x-11">
         <div className="min-w-0 self-start">
           <DndContext
             id={`dnd-project-images-${project.id}`}
@@ -327,18 +332,20 @@ export function ProjectImagesGridPanel({ project, images, savedImageId }: Props)
           </DndContext>
         </div>
 
-        <aside className="min-w-0 w-full max-w-[360px] justify-self-end self-start lg:sticky lg:top-20">
+        <aside className="min-w-0 w-full max-w-[360px] justify-self-end self-start pl-1 lg:sticky lg:top-24 lg:z-10 lg:pl-2">
           {selectedImage ? (
-            <div className="flex flex-col overflow-hidden rounded-lg border border-zinc-800/70 bg-zinc-950/70 shadow-sm shadow-black/15 transition-[border-color,background-color] duration-200 ease-out">
-              <div className="flex shrink-0 items-center gap-1.5 border-b border-zinc-800/55 bg-zinc-900/25 px-2 py-0.5">
-                <h3 className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-zinc-500">
+            <div className="flex flex-col overflow-hidden rounded-lg border border-zinc-600/35 bg-zinc-950/85 shadow-md shadow-black/25 ring-1 ring-zinc-200/10 transition-[border-color,background-color,box-shadow] duration-200 ease-out">
+              <div className="flex shrink-0 items-baseline justify-between gap-2 border-b border-zinc-800/55 bg-zinc-950/70 px-2.5 py-1.5">
+                <span className="font-mono text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-500">
                   Inspector
-                </h3>
-                <span className="min-w-0 flex-1 truncate text-right text-[9px] tracking-wide text-zinc-600">
-                  Metadaten
+                </span>
+                <span className="min-w-0 truncate text-right text-[9px] text-zinc-500 tabular-nums">
+                  {selectedImage.width != null && selectedImage.height != null
+                    ? `${selectedImage.width}×${selectedImage.height}`
+                    : "—"}
                 </span>
               </div>
-              <div className="flex shrink-0 justify-center bg-gradient-to-b from-zinc-900/70 via-zinc-900/90 to-zinc-950/80 px-2 pt-2 pb-4">
+              <div className="shrink-0 bg-gradient-to-b from-zinc-900/40 to-zinc-950/90 px-3 pb-6 pt-3">
                 <NextImage
                   src={getAdminImagePreviewUrl(selectedImage)}
                   alt=""
@@ -346,18 +353,18 @@ export function ProjectImagesGridPanel({ project, images, savedImageId }: Props)
                   height={inspectorPreviewH}
                   sizes="(max-width: 1024px) 90vw, 320px"
                   unoptimized
-                  className="h-auto max-h-[240px] w-full object-contain object-center"
+                  className="mx-auto h-auto max-h-[220px] w-full object-contain object-center opacity-[0.98]"
                 />
               </div>
               {selectedImage.storagePath ? (
                 <p
-                  className="shrink-0 truncate border-t border-zinc-800/40 bg-zinc-950/30 px-2 py-1.5 font-mono text-[9px] text-zinc-500"
+                  className="shrink-0 truncate border-t border-zinc-800/35 bg-zinc-950/40 px-2.5 py-1.5 font-mono text-[8px] leading-snug text-zinc-600"
                   title={selectedImage.storagePath}
                 >
                   {selectedImage.storagePath}
                 </p>
               ) : null}
-              <div className="shrink-0 border-t border-zinc-800/40 bg-zinc-950/35 p-2 pt-3 sm:p-2.5 sm:pt-3.5">
+              <div className="shrink-0 bg-zinc-950/55 px-2.5 pb-3 pt-4">
                 <ProjectImageDetailsForm
                   project={project}
                   image={selectedImage}
@@ -365,29 +372,31 @@ export function ProjectImagesGridPanel({ project, images, savedImageId }: Props)
                   showCustomAspect={selectedShowCustom}
                   justSaved={savedImageId === selectedImage.id}
                   compact
+                  onDirtyChange={(d) => editorSession?.setImageDetailsDirty(d)}
+                  onSavingChange={(s) => editorSession?.setImageDetailsSaving(s)}
                 />
               </div>
             </div>
           ) : (
-            <div className="flex flex-col overflow-hidden rounded-lg border border-dashed border-zinc-800/75 bg-zinc-950/35 shadow-sm shadow-black/15">
-              <div className="flex shrink-0 items-center gap-1.5 border-b border-zinc-800/60 bg-zinc-900/25 px-2 py-1">
-                <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-zinc-500">
+            <div className="flex flex-col overflow-hidden rounded-lg border border-dashed border-zinc-800/70 bg-zinc-950/80 shadow-sm shadow-black/15">
+              <div className="flex shrink-0 items-baseline justify-between gap-2 border-b border-zinc-800/40 bg-zinc-950/50 px-2.5 py-1.5">
+                <span className="font-mono text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-600">
                   Inspector
                 </span>
-                <span className="min-w-0 flex-1 text-right text-[9px] text-zinc-600">—</span>
+                <span className="text-right text-[9px] text-zinc-600">—</span>
               </div>
               <div
                 className="flex shrink-0 justify-center bg-gradient-to-b from-zinc-900/75 via-zinc-900 to-zinc-950/85 px-2 py-5 pb-5"
                 aria-hidden
               >
                 <div className="flex w-full max-w-[min(100%,240px)] items-center justify-center rounded-md border border-zinc-800/40 bg-zinc-900/30 px-3 py-6 text-center">
-                  <span className="text-[11px] leading-relaxed text-zinc-600">Vorschau</span>
+                  <span className="text-[11px] leading-relaxed text-zinc-600">Preview</span>
                 </div>
               </div>
               <p className="shrink-0 border-t border-zinc-800/45 px-3 py-3 text-center text-sm leading-relaxed text-zinc-600">
                 {images.length === 0
-                  ? "Nach dem Upload erscheinen Bilder hier. Anschließend ein Kachelbild auswählen für Metadaten."
-                  : "Bild im Raster auswählen, um Metadaten zu bearbeiten."}
+                  ? "After upload, pick a tile here to edit in the inspector."
+                  : "Select a tile to edit details in the inspector."}
               </p>
             </div>
           )}

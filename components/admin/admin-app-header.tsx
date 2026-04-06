@@ -3,7 +3,7 @@ import { SignOutButton } from "@/components/admin/sign-out-button";
 import { getPublicConfig } from "@/lib/public-config";
 
 const navLinkClass =
-  "rounded-md px-2 py-1.5 text-[12px] font-medium tracking-wide text-zinc-400 transition-colors duration-200 hover:bg-white/5 hover:text-zinc-200";
+  "rounded-md px-2 py-1.5 text-[12px] font-medium tracking-wide text-zinc-400 outline-none transition-colors duration-200 hover:bg-white/5 hover:text-zinc-200 focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950";
 
 /**
  * Opaker Admin-Header (secure): Brand links, nur Admin-Navigation.
@@ -17,7 +17,7 @@ export function AdminAppHeader() {
         <div className="flex min-w-0 flex-1 items-center gap-5 sm:gap-8">
           <Link
             href="/admin/projects"
-            className="group flex min-w-0 shrink-0 items-baseline gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-amber-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+            className="group flex min-w-0 shrink-0 items-baseline gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
           >
             <span className="truncate font-serif text-[1.05rem] font-normal tracking-[-0.02em] text-zinc-100 transition-opacity duration-200 group-hover:opacity-90 sm:text-[1.15rem]">
               {brandName}
