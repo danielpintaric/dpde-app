@@ -30,18 +30,28 @@ export function HomeMoreWork({ items, className }: Props) {
     return null;
   }
 
+  const n = items.length;
+  /** Letzte Zeile: ein Tile (4,7,10…) → zentriert; zwei Tiles (2,5,8…) → 2+1-Spalten, Zeile ohne Loch. */
+  const remainder = n % 3;
+
   return (
     <section className={className} aria-labelledby="home-more-work-heading">
       <div className="mx-auto max-w-7xl">
         <h2 id="home-more-work-heading" className={moreWorkSectionKicker}>
           More work
         </h2>
-        <ul className="mt-9 grid list-none grid-cols-1 gap-x-0 gap-y-16 sm:mt-11 sm:gap-y-[4.5rem] md:grid-cols-2 md:gap-x-12 md:gap-y-[4.75rem] lg:grid-cols-3 lg:gap-x-14 lg:gap-y-24 lg:[&>li:nth-child(3n+2)]:translate-y-3">
-          {items.map((item, i) => (
-            <li key={`${item.slug}-${i}`} className="min-w-0">
+        <ul className="mt-9 grid list-none grid-cols-1 gap-x-0 gap-y-16 sm:mt-11 sm:gap-y-[4.5rem] md:grid-cols-2 md:gap-x-12 md:gap-y-[4.75rem] lg:grid-cols-3 lg:gap-x-14 lg:gap-y-24">
+          {items.map((item, i) => {
+            const isSoloLastRow = remainder === 1 && i === n - 1;
+            const isPairLastWide = remainder === 2 && i === n - 2;
+            return (
+            <li
+              key={`${item.slug}-${i}`}
+              className={`min-w-0${isSoloLastRow ? " lg:col-span-3 lg:flex lg:justify-center" : ""}${isPairLastWide ? " lg:col-span-2" : ""}`}
+            >
               <Link
                 href={`/portfolio/${item.slug}`}
-                className={`${editorialFrameInteractive} group block`}
+                className={`${editorialFrameInteractive} group block${isSoloLastRow ? " w-full max-w-[min(28rem,100%)] sm:max-w-[min(32rem,100%)] lg:max-w-[min(36rem,100%)]" : ""}`}
                 aria-label={`${item.title} — ${item.category}`}
               >
                 <div className={`relative w-full overflow-hidden ${aspectClass(i)}`}>
@@ -64,7 +74,8 @@ export function HomeMoreWork({ items, className }: Props) {
                 </div>
               </Link>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </div>
     </section>
