@@ -44,6 +44,8 @@ export type HomeFeaturedWorkItem = {
 type Props = {
   items: HomeFeaturedWorkItem[];
   className?: string;
+  /** Section kicker (e.g. “Selected work”). */
+  sectionLabel: string;
 };
 
 function FeaturedTileLead({
@@ -134,7 +136,7 @@ function FeaturedTileSupport({
   );
 }
 
-export function HomeFeaturedWork({ items, className }: Props) {
+export function HomeFeaturedWork({ items, className, sectionLabel }: Props) {
   const list = items
     .slice(0, 3)
     .filter((x) => x.slug.trim() !== "" && x.image.trim() !== "");
@@ -153,11 +155,11 @@ export function HomeFeaturedWork({ items, className }: Props) {
     >
       <div className="mx-auto w-full max-w-7xl">
         <h2 id="home-featured-work-heading" className={homeSectionKicker}>
-          Selected work
+          {sectionLabel}
         </h2>
 
         {leadOnly ? (
-          <div className="mt-7 md:mt-10 lg:mt-9">
+          <div className="mt-7 md:mt-10 lg:mt-10">
             <FeaturedTileLead
               href={`/portfolio/${lead.slug}`}
               src={lead.image}

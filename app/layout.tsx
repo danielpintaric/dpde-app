@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { PageTransition } from "@/components/page-transition";
 import { RootPublicShell } from "@/components/root-public-shell";
-import { getMetadataBaseUrl, getPublicConfig } from "@/lib/public-config";
+import { getMetadataBaseUrl } from "@/lib/public-config";
+import { getResolvedSiteGlobal } from "@/lib/services/site-global";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,28 +23,36 @@ const instrumentSerif = Instrument_Serif({
   display: "swap",
 });
 
-const { brandName } = getPublicConfig();
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
 };
 
-export const metadata: Metadata = {
-  metadataBase: getMetadataBaseUrl(),
-  title: {
-    default: `${brandName} — Photography`,
-    template: `%s — ${brandName}`,
-  },
-  description: `Portrait and editorial photography — ${brandName}, Berlin. Commissions and collaborations by availability.`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getResolvedSiteGlobal();
+  const brand = site.brandName;
+  const locationPart = site.locationCity?.trim() ? `, ${site.locationCity.trim()}` : ", Berlin";
+  const description = site.bioLine?.trim()
+    ? `${site.bioLine.trim()} — ${brand}.`
+    : `Portrait and editorial photography — ${brand}${locationPart}. Commissions and collaborations by availability.`;
+  return {
+    metadataBase: getMetadataBaseUrl(),
+    title: {
+      default: `${brand} — Photography`,
+      template: `%s — ${brand}`,
+    },
+    description,
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const siteGlobal = await getResolvedSiteGlobal();
+
   return (
     <html
       lang="en"
@@ -51,7 +60,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full scroll-smooth antialiased`}
     >
       <body className="flex min-h-dvh flex-col bg-zinc-950 font-sans text-zinc-100">
-        <RootPublicShell>
+        <RootPublicShell siteGlobal={siteGlobal}>
           <PageTransition>{children}</PageTransition>
         </RootPublicShell>
       </body>

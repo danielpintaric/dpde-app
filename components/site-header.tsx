@@ -3,56 +3,90 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState, type MouseEvent } from "react";
-import { linkFocusVisible, transitionNav, transitionQuick, transitionShell, tapSoft } from "@/lib/editorial";
+import { isSpecialHref } from "@/lib/href-utils";
+import { navLinkIsActive } from "@/lib/nav-utils";
+import { linkFocusVisible, transitionNav, transitionShell, tapSoft } from "@/lib/editorial";
+import type { ResolvedNavItem, ResolvedSiteGlobal } from "@/types/site-global";
 
-const NAV = [
-  { href: "/portfolio", label: "Work" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
-  { href: "/client", label: "Client area" },
-] as const;
+const navLinkClass = (active: boolean) =>
+  `text-[12px] font-normal tracking-[0.07em] ${transitionNav} ${linkFocusVisible} ${tapSoft} ${
+    active
+      ? "text-zinc-400/95 underline decoration-zinc-500/25 underline-offset-[7px]"
+      : "text-zinc-500/95 hover:text-zinc-400/90 hover:underline hover:decoration-zinc-600/28 hover:underline-offset-[8px]"
+  }`;
 
-function linkActive(pathname: string, href: string) {
-  if (href === "/portfolio") return pathname === "/portfolio" || pathname.startsWith("/portfolio/");
-  if (href === "/client") return pathname === "/client" || pathname.startsWith("/client/");
-  return pathname === href;
-}
-
-function NavLinks({
+function NavItemLink({
+  item,
+  pathname,
   onNavigate,
-  className,
 }: {
+  item: ResolvedNavItem;
+  pathname: string;
   onNavigate?: () => void;
-  className?: string;
 }) {
-  const pathname = usePathname();
+  const { href, label } = item;
+  const active = navLinkIsActive(pathname, href);
+  const cls = navLinkClass(active);
+
+  if (isSpecialHref(href)) {
+    return (
+      <a
+        href={href}
+        onClick={onNavigate}
+        className={cls}
+        {...(href.trim().startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      >
+        {label}
+      </a>
+    );
+  }
 
   return (
-    <ul className={className}>
-      {NAV.map(({ href, label }) => {
-        const active = linkActive(pathname, href);
-        return (
-          <li key={href}>
-            <Link
-              href={href}
-              onClick={onNavigate}
-              className={`text-[12px] font-normal tracking-[0.07em] ${transitionNav} ${linkFocusVisible} ${tapSoft} ${
-                active
-                  ? "text-zinc-400/95 underline decoration-zinc-500/25 underline-offset-[7px]"
-                  : "text-zinc-500/95 hover:text-zinc-400/90 hover:underline hover:decoration-zinc-600/28 hover:underline-offset-[8px]"
-              }`}
-              aria-current={active ? "page" : undefined}
-            >
-              {label}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
+    <Link href={href} onClick={onNavigate} className={cls} aria-current={active ? "page" : undefined}>
+      {label}
+    </Link>
   );
 }
 
-export function SiteHeader() {
+function HeaderCtaLink({
+  label,
+  href,
+  pathname,
+  onNavigate,
+}: {
+  label: string;
+  href: string;
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  const active = navLinkIsActive(pathname, href);
+  const cls = navLinkClass(active);
+
+  if (isSpecialHref(href)) {
+    return (
+      <a
+        href={href}
+        onClick={onNavigate}
+        className={cls}
+        {...(href.trim().startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      >
+        {label}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} onClick={onNavigate} className={cls} aria-current={active ? "page" : undefined}>
+      {label}
+    </Link>
+  );
+}
+
+type SiteHeaderProps = {
+  site: ResolvedSiteGlobal;
+};
+
+export function SiteHeader({ site }: SiteHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -80,14 +114,22 @@ export function SiteHeader() {
 
   const isHome = pathname === "/";
   const showLogo = !isHome || scrolled || menuOpen;
+  const logoHomeHref = site.logoHomeHref.trim() || "/";
 
   const onLogoClick = (e: MouseEvent<HTMLAnchorElement>) => {
     setMenuOpen(false);
-    if (isHome) {
+    if (isHome && logoHomeHref === "/") {
       e.preventDefault();
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     }
   };
+
+  const showHeaderCta =
+    Boolean(site.headerCtaLabel?.trim()) && Boolean(site.headerCtaHref?.trim());
+  const headerCtaLabel = site.headerCtaLabel?.trim() ?? "";
+  const headerCtaHref = site.headerCtaHref?.trim() ?? "";
+
+  const navItems = site.navigationItems;
 
   return (
     <header
@@ -100,19 +142,41 @@ export function SiteHeader() {
       <div className="px-6 sm:px-10 lg:px-16">
         <div className="mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between sm:h-20">
           <Link
-            href="/"
+            href={logoHomeHref}
             onClick={onLogoClick}
             className={`shrink-0 font-serif text-[1.125rem] font-normal leading-none tracking-[-0.03em] text-zinc-100 transition-[opacity,transform] duration-[300ms] ease-out hover:opacity-[0.92] ${linkFocusVisible} sm:text-[1.25rem] ${
               showLogo ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-0.5 opacity-0"
-            }`}
+            } ${site.logoImageUrl ? "inline-flex max-w-[min(200px,55vw)] items-center" : ""}`}
             tabIndex={showLogo ? undefined : -1}
           >
-            Daniel Pintarić
+            {site.logoImageUrl ? (
+              <img
+                src={site.logoImageUrl}
+                alt={site.wordmarkText}
+                className="h-[1.35rem] w-auto max-h-[1.5rem] max-w-full object-contain object-left sm:h-[1.45rem] sm:max-h-[1.6rem]"
+              />
+            ) : (
+              site.wordmarkText
+            )}
           </Link>
 
-          <nav className="hidden items-center md:flex" aria-label="Main">
-            <NavLinks className="flex items-center gap-x-11 lg:gap-x-14" />
-          </nav>
+          <div className="hidden items-center md:flex md:gap-x-11 lg:gap-x-14">
+            <ul className="flex items-center gap-x-11 lg:gap-x-14">
+              {navItems.map((item, i) => (
+                <li key={`${item.href}-${i}`}>
+                  <NavItemLink item={item} pathname={pathname} />
+                </li>
+              ))}
+            </ul>
+            {showHeaderCta ? (
+              <HeaderCtaLink
+                label={headerCtaLabel}
+                href={headerCtaHref}
+                pathname={pathname}
+                onNavigate={() => setMenuOpen(false)}
+              />
+            ) : null}
+          </div>
 
           <div className="flex items-center md:hidden">
             <button
@@ -134,10 +198,23 @@ export function SiteHeader() {
           className="border-b border-zinc-800/50 bg-zinc-950/94 px-6 pb-10 pt-6 backdrop-blur-xl sm:px-10 lg:px-16 md:hidden"
         >
           <nav className="mx-auto w-full max-w-7xl" aria-label="Main mobile">
-            <NavLinks
-              onNavigate={() => setMenuOpen(false)}
-              className="flex flex-col gap-8"
-            />
+            <ul className="flex flex-col gap-8">
+              {navItems.map((item, i) => (
+                <li key={`m-${item.href}-${i}`}>
+                  <NavItemLink item={item} pathname={pathname} onNavigate={() => setMenuOpen(false)} />
+                </li>
+              ))}
+              {showHeaderCta ? (
+                <li>
+                  <HeaderCtaLink
+                    label={headerCtaLabel}
+                    href={headerCtaHref}
+                    pathname={pathname}
+                    onNavigate={() => setMenuOpen(false)}
+                  />
+                </li>
+              ) : null}
+            </ul>
           </nav>
         </div>
       ) : null}

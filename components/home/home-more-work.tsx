@@ -7,6 +7,7 @@ import {
   homeTileImageBase,
   homeTileImageHover,
   homeTileMeta,
+  homeTileMetaToTitle,
   homeTileTitle,
 } from "@/lib/editorial";
 import type { HomeMoreWorkTile } from "@/lib/services/home-portfolio-data";
@@ -25,9 +26,10 @@ function aspectClass(i: number): string {
 type Props = {
   items: HomeMoreWorkTile[];
   className?: string;
+  sectionLabel: string;
 };
 
-export function HomeMoreWork({ items, className }: Props) {
+export function HomeMoreWork({ items, className, sectionLabel }: Props) {
   if (items.length === 0) {
     return null;
   }
@@ -40,9 +42,9 @@ export function HomeMoreWork({ items, className }: Props) {
     <section className={className} aria-labelledby="home-more-work-heading">
       <div className="mx-auto max-w-7xl">
         <h2 id="home-more-work-heading" className={homeSectionKicker}>
-          More work
+          {sectionLabel}
         </h2>
-        <ul className="mt-9 grid list-none grid-cols-1 gap-x-0 gap-y-16 sm:mt-11 sm:gap-y-[4.5rem] md:grid-cols-2 md:gap-x-12 md:gap-y-[4.75rem] lg:mt-[3.75rem] lg:grid-cols-3 lg:gap-x-14 lg:gap-y-24">
+        <ul className="mt-9 grid list-none grid-cols-1 gap-x-0 gap-y-16 sm:mt-11 sm:gap-y-[4.5rem] md:grid-cols-2 md:gap-x-12 md:gap-y-[4.75rem] lg:mt-10 lg:grid-cols-3 lg:gap-x-14 lg:gap-y-24">
           {items.map((item, i) => {
             const isSoloLastRow = remainder === 1 && i === n - 1;
             const isPairLastWide = remainder === 2 && i === n - 2;
@@ -69,7 +71,7 @@ export function HomeMoreWork({ items, className }: Props) {
                   </div>
                   <div className={homeTileCaptionStack}>
                     {hasMeta ? <p className={homeTileMeta}>{item.category}</p> : null}
-                    <p className={`${homeTileTitle} ${hasMeta ? "mt-1" : ""}`}>{item.title}</p>
+                    <p className={`${homeTileTitle} ${hasMeta ? homeTileMetaToTitle : ""}`}>{item.title}</p>
                   </div>
                 </Link>
               </li>

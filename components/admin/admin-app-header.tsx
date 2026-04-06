@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SignOutButton } from "@/components/admin/sign-out-button";
-import { getPublicConfig } from "@/lib/public-config";
+import { getResolvedSiteGlobal } from "@/lib/services/site-global";
 
 const navLinkClass =
   "rounded-md px-2 py-1.5 text-[12px] font-medium tracking-wide text-zinc-400 outline-none transition-colors duration-200 hover:bg-white/5 hover:text-zinc-200 focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950";
@@ -8,8 +8,8 @@ const navLinkClass =
 /**
  * Opaker Admin-Header (secure): Brand links, nur Admin-Navigation.
  */
-export function AdminAppHeader() {
-  const { brandName } = getPublicConfig();
+export async function AdminAppHeader() {
+  const { brandName } = await getResolvedSiteGlobal();
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-800/95 bg-zinc-950 pt-[env(safe-area-inset-top,0px)] shadow-[0_1px_0_rgba(0,0,0,0.35)]">
@@ -31,11 +31,11 @@ export function AdminAppHeader() {
             <Link href="/admin/projects" className={navLinkClass}>
               Projects
             </Link>
-            <Link href="/admin/projects/new" className={navLinkClass}>
-              New project
-            </Link>
             <Link href="/admin/site" className={navLinkClass}>
               Site
+            </Link>
+            <Link href="/admin/projects/new" className={navLinkClass}>
+              New project
             </Link>
           </nav>
         </div>

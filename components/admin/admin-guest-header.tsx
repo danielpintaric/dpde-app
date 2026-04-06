@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { getPublicConfig } from "@/lib/public-config";
+import { getResolvedSiteGlobal } from "@/lib/services/site-global";
 
 /**
  * Opaker Header für Admin-Gast-Routen (z. B. Login): Brand, kein Public-Menü.
  */
-export function AdminGuestHeader() {
-  const { brandName } = getPublicConfig();
+export async function AdminGuestHeader() {
+  const { brandName } = await getResolvedSiteGlobal();
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-800/95 bg-zinc-950 pt-[env(safe-area-inset-top,0px)] shadow-[0_1px_0_rgba(0,0,0,0.35)]">

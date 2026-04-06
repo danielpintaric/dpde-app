@@ -82,6 +82,9 @@ export const typeCaption =
 export const homeSectionKicker =
   "font-serif text-[10px] font-normal uppercase tracking-[0.2em] text-zinc-500/75 sm:text-[11px] sm:tracking-[0.16em]";
 
+/** Approach-Block: gleiche Kicker-Typo wie Selected/More, ohne Caps („Studio“). */
+export const homeApproachKicker = `${homeSectionKicker} normal-case`;
+
 /** Home tile images: gemeinsame Basis (Hover separat). */
 export const homeTileImageBase =
   "object-cover brightness-[0.97] contrast-[1.02]";
@@ -95,6 +98,9 @@ export const homeTileImageHover =
 
 /** Abstand Bildunterkante → Caption-Stack. */
 export const homeTileCaptionStack = "mt-3 sm:mt-4";
+
+/** Abstand Kategorie-Zeile → Titel (More Work, wenn Meta gesetzt). */
+export const homeTileMetaToTitle = "mt-1";
 
 /** Kategorie-Zeile unter Kacheln (More Work). */
 export const homeTileMeta =

@@ -7,7 +7,7 @@ import { isSiteHeroStoragePath, type SiteHeroSlot } from "@/lib/storage/site-her
 
 function parseSlot(raw: string): SiteHeroSlot | null {
   const n = parseInt(raw, 10);
-  if (n === 1 || n === 2 || n === 3) {
+  if (n === 1 || n === 2 || n === 3 || n === 4) {
     return n;
   }
   return null;
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   const slot = parseSlot(String(formData.get("slot") ?? ""));
   if (slot == null) {
-    return NextResponse.json({ error: "Invalid slot (use 1, 2, or 3)." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid slot (use 1, 2, 3, or 4)." }, { status: 400 });
   }
 
   const file = formData.get("file");

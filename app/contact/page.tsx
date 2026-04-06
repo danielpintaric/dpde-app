@@ -13,15 +13,24 @@ import {
   typeH2Contact,
   typeMeta,
 } from "@/lib/editorial";
+import { getResolvedSiteGlobal } from "@/lib/services/site-global";
 import { ContactForm } from "./contact-form";
 
-export const metadata: Metadata = {
-  title: "Contact",
-  description:
-    "Editorial and portrait commissions, collaborations — Daniel Pintarić, Berlin. Availability by season.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getResolvedSiteGlobal();
+  const locationPart = site.locationCity?.trim() ? `, ${site.locationCity.trim()}` : ", Berlin";
+  const description = site.bioLine?.trim()
+    ? `${site.bioLine.trim()} — ${site.brandName}.`
+    : `Editorial and portrait commissions, collaborations — ${site.brandName}${locationPart}. Availability by season.`;
+  return {
+    title: "Contact",
+    description,
+  };
+}
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const site = await getResolvedSiteGlobal();
+
   return (
     <PageMain>
       <div className={pageContentShell}>
@@ -41,10 +50,10 @@ export default function ContactPage() {
                 <h2 className={typeH2Contact}>Direct</h2>
                 <p className="mt-5 text-sm font-light leading-relaxed text-zinc-500">
                   <a
-                    href="mailto:hello@danielpintaric.com"
+                    href={site.footerEmailMailto}
                     className={`text-zinc-400 underline decoration-zinc-600/40 underline-offset-[6px] ${transitionQuick} hover:text-zinc-300 hover:decoration-zinc-500/55 ${linkFocusVisible} ${tapSoft}`}
                   >
-                    hello@danielpintaric.com
+                    {site.footerEmailLinkLabel}
                   </a>
                 </p>
               </div>
