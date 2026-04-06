@@ -2,8 +2,9 @@ import Link from "next/link";
 import { EditorialHero } from "@/components/hero/editorial-hero";
 import {
   editorialFrame,
-  editorialImage,
   editorialImageOverlay,
+  homeTileImageBase,
+  homeTileImageHover,
   linkFocusVisible,
   stackMetaToTitle,
   stackTitleToBody,
@@ -21,17 +22,17 @@ import { getHomeFeaturedEditorialData, getHomeMoreWorkTiles } from "@/lib/servic
 import { getResolvedLandingHero } from "@/lib/services/site-landing";
 
 /**
- * First block after hero: on mobile, no negative margin — overlap was pulling the gallery into the first
- * viewport on iPhone. Desktop keeps the intentional overlap into the hero.
+ * Selected Work: kein negativer Rand unter lg (kein Überlapp auf schmalen Viewports).
+ * Ab lg: etwas stärkerer editorial Überlapp (–mt-32) + angepasstes pt.
  */
-/** Sanfter Übergang vom Hero: etwas stärkerer Überlapp, weicheres Padding — liest sich als Fortsetzung. */
 const HOME_FIRST_AFTER_HERO =
-  "relative z-10 mt-0 px-6 pt-[4.5rem] pb-[4.25rem] sm:-mt-[5rem] sm:px-10 sm:pt-[6.5rem] sm:pb-[5rem] lg:-mt-[5.5rem] lg:px-16 lg:pt-[6.75rem] lg:pb-[5.5rem]";
-/** Approach: luftiger Abschluss, harmonisch zu More work. */
-const HOME_EDITORIAL_SECTION = "px-6 py-12 sm:px-10 sm:py-14 lg:px-16 lg:py-16";
-/** Zweite Werkebene: gleicher Seitenrhythmus, klarer Abstand zu Featured. */
+  "mt-0 px-6 pt-[4.5rem] pb-[4.25rem] sm:px-10 sm:pt-[6.5rem] sm:pb-[5rem] lg:-mt-32 lg:px-16 lg:pt-[5rem] lg:pb-[5.5rem]";
+/** Approach: eigener Block / Abschluss — lg stärkerer Break nach More Work. */
+const HOME_EDITORIAL_SECTION =
+  "px-6 py-12 sm:px-10 sm:py-14 lg:px-16 lg:pt-32 lg:pb-16";
+/** More Work: deutlich eigenständiger Block; mehr Luft zu Featured + zu Approach (nur lg+). */
 const HOME_MORE_WORK_SECTION =
-  "px-6 pb-12 pt-14 sm:px-10 sm:pb-14 sm:pt-16 lg:px-16 lg:pb-16 lg:pt-[4.5rem]";
+  "px-6 pb-12 pt-14 sm:px-10 sm:pb-14 sm:pt-16 lg:px-16 lg:pb-24 lg:pt-32";
 
 function AboutTeaser() {
   return (
@@ -59,7 +60,7 @@ function AboutTeaser() {
               <img
                 src={ABOUT_STUDIO_IMAGE}
                 alt=""
-                className={`absolute inset-0 h-full w-full ${editorialImage} object-[center_45%]`}
+                className={`absolute inset-0 h-full w-full ${homeTileImageBase} ${homeTileImageHover} object-[center_45%]`}
                 sizes="(min-width: 1024px) 42vw, 90vw"
                 loading="lazy"
               />

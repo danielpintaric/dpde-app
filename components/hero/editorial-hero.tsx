@@ -337,6 +337,14 @@ export function EditorialHero({
         }}
         aria-hidden
       />
+      {/*
+        Soft hand-off to page background: ~¼ Hero-Höhe, nach oben transparent — liest sich mit Selected Work als ein Fluss.
+        Unter Hero-Text (z-10), über Bild/Noise.
+      */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-[min(28%,12rem)] bg-gradient-to-t from-zinc-950 from-[35%] via-zinc-950/55 via-[55%] to-transparent sm:h-[min(26%,11rem)] lg:h-[min(24%,12rem)]"
+        aria-hidden
+      />
 
       <div className="relative z-10 w-full px-6 pb-24 pt-[calc(4.75rem+env(safe-area-inset-top,0px))] sm:px-10 sm:pb-16 sm:pt-24 lg:px-16 lg:pb-20">
         {children}

@@ -78,6 +78,32 @@ export const typeBodyMuted =
 export const typeCaption =
   "mt-4 max-w-md font-serif text-[13px] font-normal leading-relaxed tracking-[-0.01em] text-zinc-400 sm:mt-5";
 
+/** Home landing: „Selected work“ / „More work“ — eine Kicker-Linie. */
+export const homeSectionKicker =
+  "font-serif text-[10px] font-normal uppercase tracking-[0.2em] text-zinc-500/75 sm:text-[11px] sm:tracking-[0.16em]";
+
+/** Home tile images: gemeinsame Basis (Hover separat). */
+export const homeTileImageBase =
+  "object-cover brightness-[0.97] contrast-[1.02]";
+
+/**
+ * Home landing — nur Zoom (kein Hover-Filter); 800 ms, Kurve wie zuletzt als „genau richtig“.
+ * Voller String — Tailwind JIT muss den kompletten String sehen.
+ */
+export const homeTileImageHover =
+  "transition-transform duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.014]";
+
+/** Abstand Bildunterkante → Caption-Stack. */
+export const homeTileCaptionStack = "mt-3 sm:mt-4";
+
+/** Kategorie-Zeile unter Kacheln (More Work). */
+export const homeTileMeta =
+  "text-[10px] font-medium uppercase tracking-[0.28em] text-zinc-500/85 transition-colors duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:text-zinc-500";
+
+/** Titel unter Kacheln (Support + More Work). */
+export const homeTileTitle =
+  "font-serif text-[0.9375rem] font-normal leading-snug tracking-[-0.02em] text-zinc-400/95 transition-colors duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:text-zinc-200 sm:text-base";
+
 /** Vertical rhythm: meta → title → body */
 export const stackMetaToTitle = "mt-4";
 export const stackTitleToBody = "mt-6";
