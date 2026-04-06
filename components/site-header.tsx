@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import { linkFocusVisible, transitionNav, transitionQuick, transitionShell, tapSoft } from "@/lib/editorial";
 
 const NAV = [
@@ -81,6 +81,14 @@ export function SiteHeader() {
   const isHome = pathname === "/";
   const showLogo = !isHome || scrolled || menuOpen;
 
+  const onLogoClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    setMenuOpen(false);
+    if (isHome) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top,0px)] ${transitionShell} ${
@@ -93,6 +101,7 @@ export function SiteHeader() {
         <div className="mx-auto flex h-[72px] w-full max-w-7xl items-center justify-between sm:h-20">
           <Link
             href="/"
+            onClick={onLogoClick}
             className={`shrink-0 font-serif text-[1.125rem] font-normal leading-none tracking-[-0.03em] text-zinc-100 transition-[opacity,transform] duration-[300ms] ease-out hover:opacity-[0.92] ${linkFocusVisible} sm:text-[1.25rem] ${
               showLogo ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-0.5 opacity-0"
             }`}

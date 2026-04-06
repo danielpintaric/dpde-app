@@ -49,3 +49,32 @@ export async function getPublishedProjectBySlugPublic(slug: string): Promise<Pro
 
   return mapProjectRow(data as ProjectRow);
 }
+
+/**
+ * By id for **public** and **unlisted** only (`private` never returned).
+ * Used for homepage featured slots (admin-selected project ids).
+ */
+export async function getPublishedProjectByIdPublic(id: string): Promise<Project | null> {
+  const trimmed = String(id ?? "").trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const supabase = createSupabasePublicClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", trimmed)
+    .in("visibility", ["public", "unlisted"])
+    .maybeSingle();
+
+  if (error) {
+    throw supabaseReadError("project by id (public)", error.message, error.code);
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return mapProjectRow(data as ProjectRow);
+}

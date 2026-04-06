@@ -2,16 +2,15 @@ import "server-only";
 
 import {
   HOME_FEATURED_SLUGS,
-  HOME_HERO_IMAGE,
   HOME_MOSAIC_SLOTS,
   HOME_WORK_PREVIEW,
   type HomeMosaicSlot,
-  type HomeWorkPreviewFrame,
   type PortfolioProject,
   getProjectBySlug as getStaticProjectBySlug,
   homepageImages,
 } from "@/lib/portfolio-data";
 import { loadPortfolioProjectBySlug } from "@/lib/services/portfolio-view-data";
+import { resolveHomeFeaturedProjectSlugs } from "@/lib/services/site-landing";
 
 export type HomeFeaturedEditorialItem = {
   slug: string;
@@ -35,9 +34,9 @@ function resolveMosaicFrameSrc(
   return project.coverImage;
 }
 
-function featuredFromStatic(): HomeFeaturedEditorialItem[] {
+function featuredFromStaticForSlugs(slugs: readonly string[]): HomeFeaturedEditorialItem[] {
   const out: HomeFeaturedEditorialItem[] = [];
-  for (const slug of HOME_FEATURED_SLUGS) {
+  for (const slug of slugs) {
     const p = getStaticProjectBySlug(slug);
     if (!p) {
       continue;
@@ -54,14 +53,15 @@ function featuredFromStatic(): HomeFeaturedEditorialItem[] {
 }
 
 /**
- * Featured strip + hero: same curated slugs as static `HOME_FEATURED_SLUGS`, resolved via
- * `loadPortfolioProjectBySlug` (Supabase when enabled, else static fallback per slug).
+ * Featured strip: slug order from site landing config (or static fallbacks), resolved via
+ * `loadPortfolioProjectBySlug`.
  */
 export async function getHomeFeaturedEditorialData(): Promise<
   HomeFeaturedEditorialItem[]
 > {
+  const slugOrder = await resolveHomeFeaturedProjectSlugs();
   const out: HomeFeaturedEditorialItem[] = [];
-  for (const slug of HOME_FEATURED_SLUGS) {
+  for (const slug of slugOrder) {
     const p = await loadPortfolioProjectBySlug(slug);
     if (!p) {
       continue;
@@ -77,11 +77,7 @@ export async function getHomeFeaturedEditorialData(): Promise<
   if (out.length > 0) {
     return out;
   }
-  return featuredFromStatic();
-}
-
-export function getHomeHeroFallbackImageSrc(): string {
-  return HOME_HERO_IMAGE;
+  return featuredFromStaticForSlugs(HOME_FEATURED_SLUGS);
 }
 
 /**
@@ -101,12 +97,39 @@ export async function getHomepageLinkedProjects(): Promise<{
   return { widePlateProject, wideBelowProject, duoProject };
 }
 
+function metaForHomeMoreWorkSlug(
+  slug: string,
+  project: PortfolioProject | null,
+): { title: string; category: string } {
+  if (project) {
+    return { title: project.title, category: project.category };
+  }
+  const s = getStaticProjectBySlug(slug);
+  if (s) {
+    return { title: s.title, category: s.category };
+  }
+  const title = slug
+    .split("-")
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+  return { title, category: "" };
+}
+
+/** Homepage „More work“: gleiche Kuratierung wie zuvor Mosaic, mit Titel & Kategorie für editorial Zeilen. */
+export type HomeMoreWorkTile = {
+  src: string;
+  slug: string;
+  imgClassName?: string;
+  title: string;
+  category: string;
+};
+
 /**
- * Recent pieces mosaic: curated slots + Supabase-backed `PortfolioProject` frames; falls back per cell to
- * legacy `HOME_WORK_PREVIEW` src when the project is missing.
+ * Second layer unter „Selected work“: gleiche Slots wie früher {@link HOME_MOSAIC_SLOTS}, ohne Layout-Logik.
  */
-export async function getHomeWorkMosaicFrames(): Promise<HomeWorkPreviewFrame[]> {
-  const out: HomeWorkPreviewFrame[] = [];
+export async function getHomeMoreWorkTiles(): Promise<HomeMoreWorkTile[]> {
+  const out: HomeMoreWorkTile[] = [];
   for (let i = 0; i < HOME_MOSAIC_SLOTS.length; i++) {
     const slot = HOME_MOSAIC_SLOTS[i]!;
     const staticFallback = HOME_WORK_PREVIEW[i];
@@ -119,10 +142,13 @@ export async function getHomeWorkMosaicFrames(): Promise<HomeWorkPreviewFrame[]>
     } else {
       continue;
     }
+    const { title, category } = metaForHomeMoreWorkSlug(slot.slug, p);
     out.push({
       src,
       slug: slot.slug,
       imgClassName: slot.imgClassName ?? staticFallback?.imgClassName,
+      title,
+      category,
     });
   }
   return out;

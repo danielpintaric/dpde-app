@@ -34,6 +34,9 @@ export function AdminAppHeader() {
             <Link href="/admin/projects/new" className={navLinkClass}>
               New project
             </Link>
+            <Link href="/admin/site" className={navLinkClass}>
+              Site
+            </Link>
           </nav>
         </div>
 
