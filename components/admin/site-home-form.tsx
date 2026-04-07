@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -30,53 +31,213 @@ const sectionTitle =
 const sectionIntro = "mb-5 max-w-prose text-[12px] leading-relaxed text-zinc-500";
 const panelClass =
   "rounded-xl border border-zinc-800/60 bg-zinc-950/50 p-5 shadow-md shadow-black/15 ring-1 ring-zinc-800/35 sm:p-6";
+/** Offset for anchor scroll so section titles clear the sticky admin header (h-14 / sm:h-16) + safe area. */
+const sectionScrollClass =
+  "scroll-mt-[calc(env(safe-area-inset-top,0px)+3.5rem+0.5rem)] sm:scroll-mt-[calc(env(safe-area-inset-top,0px)+4rem+0.5rem)]";
+const sectionPanelClass = `${panelClass} ${sectionScrollClass}`;
 const formMainClass =
   "mx-auto flex w-full max-w-5xl flex-col space-y-10 px-4 pb-32 sm:px-6 lg:space-y-12";
 
 type ProjectOption = Pick<Project, "id" | "title" | "slug">;
 
+const siteAdminNavLinkClass =
+  "shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium outline-none transition-colors hover:bg-white/5 hover:text-zinc-300 focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950";
+
+const siteAdminNavLinkInactiveClass = `${siteAdminNavLinkClass} border-b border-transparent text-zinc-500`;
+const siteAdminNavLinkActiveClass = `${siteAdminNavLinkClass} border-b border-zinc-500/45 text-zinc-200`;
+
+/** Section ids for `/admin/site` jump nav + scroll-spy (order = document order). */
+const ADMIN_SITE_NAV_SECTION_IDS: readonly string[] = [
+  "admin-site-brand",
+  "admin-site-navigation",
+  "admin-site-header-cta",
+  "admin-site-contact",
+  "admin-site-footer",
+  "admin-site-hero",
+  "admin-site-homepage",
+  "admin-site-home-curation",
+];
+
+function pickAdminSiteActiveSectionId(navEl: HTMLElement | null): string {
+  const lineY =
+    navEl != null
+      ? navEl.getBoundingClientRect().bottom + 4
+      : typeof window !== "undefined"
+        ? Math.min(168, window.innerHeight * 0.22)
+        : 140;
+
+  const lastId = ADMIN_SITE_NAV_SECTION_IDS[ADMIN_SITE_NAV_SECTION_IDS.length - 1]!;
+  const lastSection = document.getElementById(lastId);
+  if (
+    lastSection &&
+    typeof window !== "undefined" &&
+    window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4
+  ) {
+    return lastId;
+  }
+
+  let active = ADMIN_SITE_NAV_SECTION_IDS[0]!;
+  for (const id of ADMIN_SITE_NAV_SECTION_IDS) {
+    const el = document.getElementById(id);
+    if (!el) {
+      continue;
+    }
+    const top = el.getBoundingClientRect().top;
+    if (top <= lineY + 1) {
+      active = id;
+    }
+  }
+  return active;
+}
+
+/** In-page jump links for the long `/admin/site` form (anchors on sections below). */
+function SiteAdminInPageNav() {
+  const navRef = useRef<HTMLElement | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(ADMIN_SITE_NAV_SECTION_IDS[0] ?? null);
+
+  const items = useMemo(
+    () =>
+      [
+        { href: "#admin-site-brand", label: "Brand" },
+        { href: "#admin-site-navigation", label: "Navigation" },
+        { href: "#admin-site-header-cta", label: "Header CTA" },
+        { href: "#admin-site-contact", label: "Contact" },
+        { href: "#admin-site-footer", label: "Footer" },
+        { href: "#admin-site-hero", label: "Hero" },
+        { href: "#admin-site-homepage", label: "Homepage content" },
+        { href: "#admin-site-home-curation", label: "Home curation" },
+      ] as const,
+    [],
+  );
+
+  const scheduleUpdate = useCallback(() => {
+    if (rafRef.current != null) {
+      return;
+    }
+    rafRef.current = window.requestAnimationFrame(() => {
+      rafRef.current = null;
+      const next = pickAdminSiteActiveSectionId(navRef.current);
+      setActiveId((prev) => (prev === next ? prev : next));
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    scheduleUpdate();
+    let inner: number | null = null;
+    const outer = window.requestAnimationFrame(() => {
+      inner = window.requestAnimationFrame(scheduleUpdate);
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      if (inner != null) {
+        cancelAnimationFrame(inner);
+      }
+    };
+  }, [scheduleUpdate]);
+
+  useEffect(() => {
+    const thresholds = [0, 0.05, 0.15, 0.35, 0.55, 0.75, 1];
+    const observer = new IntersectionObserver(scheduleUpdate, {
+      root: null,
+      rootMargin: "-96px 0px -52% 0px",
+      threshold: thresholds,
+    });
+
+    for (const id of ADMIN_SITE_NAV_SECTION_IDS) {
+      const el = document.getElementById(id);
+      if (el) {
+        observer.observe(el);
+      }
+    }
+
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+    window.addEventListener("hashchange", scheduleUpdate);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+      window.removeEventListener("hashchange", scheduleUpdate);
+      if (rafRef.current != null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [scheduleUpdate]);
+
+  return (
+    <nav
+      ref={navRef}
+      className="sticky top-14 z-30 -mx-4 mb-6 border-b border-zinc-800/50 bg-zinc-950/90 px-4 py-2.5 backdrop-blur-sm sm:-mx-6 sm:top-16 sm:mb-8 sm:px-6"
+      aria-label="Sections on this page"
+    >
+      <p className="mb-2 font-mono text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-600">
+        Jump to
+      </p>
+      <div className="flex flex-wrap gap-x-2 gap-y-1.5">
+        {items.map(({ href, label }) => {
+          const id = href.slice(1);
+          const isActive = activeId === id;
+          return (
+            <a
+              key={href}
+              href={href}
+              className={isActive ? siteAdminNavLinkActiveClass : siteAdminNavLinkInactiveClass}
+              aria-current={isActive ? "location" : undefined}
+            >
+              {label}
+            </a>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
 function SiteHomeSelectedWorkFields({
-  initial,
+  lead,
+  support1,
+  support2,
+  onLeadChange,
+  onSupport1Change,
+  onSupport2Change,
   projects,
 }: {
-  initial: AdminSiteFormValues;
+  lead: string;
+  support1: string;
+  support2: string;
+  onLeadChange: (v: string) => void;
+  onSupport1Change: (v: string) => void;
+  onSupport2Change: (v: string) => void;
   projects: ProjectOption[];
 }) {
   const sorted = projects.slice().sort((a, b) => a.title.localeCompare(b.title));
-
-  const [lead, setLead] = useState(initial.featuredProjectId1);
-  const [support1, setSupport1] = useState(initial.featuredProjectId2);
-  const [support2, setSupport2] = useState(initial.featuredProjectId3);
-
-  useEffect(() => {
-    setLead(initial.featuredProjectId1);
-    setSupport1(initial.featuredProjectId2);
-    setSupport2(initial.featuredProjectId3);
-  }, [initial.featuredProjectId1, initial.featuredProjectId2, initial.featuredProjectId3]);
 
   const slots = [
     {
       id: "featured_project_id_1" as const,
       label: "Lead project",
       value: lead,
-      onChange: setLead,
+      onChange: onLeadChange,
     },
     {
       id: "featured_project_id_2" as const,
       label: "Support 1",
       value: support1,
-      onChange: setSupport1,
+      onChange: onSupport1Change,
     },
     {
       id: "featured_project_id_3" as const,
       label: "Support 2",
       value: support2,
-      onChange: setSupport2,
+      onChange: onSupport2Change,
     },
   ];
 
   return (
-    <div className="border-t border-zinc-800/70 pt-4">
+    <div>
       <span className={`${labelClass} mb-3 block`}>Selected work</span>
       <p className="mb-4 text-[12px] leading-relaxed text-zinc-500">
         Lead plus two support tiles define the &ldquo;Selected work&rdquo; block. Empty slots are filled
@@ -115,11 +276,20 @@ function SiteHomeSelectedWorkFields({
 function SiteHomeMoreWorkFields({
   initial,
   projects,
+  excludedProjectIds,
 }: {
   initial: AdminSiteFormValues;
   projects: ProjectOption[];
+  /** Project IDs used in Selected work — hidden from manual More work picks to avoid duplicates. */
+  excludedProjectIds: string[];
 }) {
   const sorted = projects.slice().sort((a, b) => a.title.localeCompare(b.title));
+  const excluded = new Set(excludedProjectIds);
+  /** Keep current slot value visible even if it became excluded (e.g. user moved project to Selected work). */
+  const manualOptionsForSlot = (slotValue: string) => {
+    const v = slotValue.trim();
+    return sorted.filter((p) => !excluded.has(p.id) || p.id === v);
+  };
 
   const [mode, setMode] = useState(initial.homeMoreWorkMode);
   const [count, setCount] = useState(initial.homeMoreWorkCount);
@@ -143,7 +313,8 @@ function SiteHomeMoreWorkFields({
       <p className="mb-4 text-[12px] leading-relaxed text-zinc-500">
         <strong className="font-medium text-zinc-400">Automatic</strong> shows the newest public projects
         (by creation date), excluding Selected work. <strong className="font-medium text-zinc-400">Manual</strong>{" "}
-        uses the ordered list below; empty or invalid picks are filled automatically.
+        uses the ordered list below; projects already in Selected work are not listed. Empty slots are filled
+        automatically on the public site if needed.
       </p>
 
       <div className="flex flex-col gap-4">
@@ -201,6 +372,7 @@ function SiteHomeMoreWorkFields({
               const i = slotIndex;
               const name = `home_more_work_manual_slot_${i + 1}` as const;
               const value = manualSlots[i] ?? "";
+              const rowOptions = manualOptionsForSlot(value);
               return (
                 <div key={name}>
                   <label htmlFor={name} className="mb-1 block text-[11px] text-zinc-600">
@@ -225,7 +397,7 @@ function SiteHomeMoreWorkFields({
                     disabled={sorted.length === 0}
                   >
                     <option value="">— None —</option>
-                    {sorted.map((p) => (
+                    {rowOptions.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.title} ({p.slug})
                       </option>
@@ -316,7 +488,11 @@ function NavRow({
 function SiteGlobalSettingsSections({ initial }: { initial: AdminSiteFormValues }) {
   return (
     <>
-      <section className={panelClass} aria-labelledby="site-brand-heading">
+      <section
+        id="admin-site-brand"
+        className={sectionPanelClass}
+        aria-labelledby="site-brand-heading"
+      >
         <h2 id="site-brand-heading" className={sectionTitle}>
           Brand
         </h2>
@@ -405,7 +581,11 @@ function SiteGlobalSettingsSections({ initial }: { initial: AdminSiteFormValues 
         </div>
       </section>
 
-      <section className={panelClass} aria-labelledby="site-nav-heading">
+      <section
+        id="admin-site-navigation"
+        className={sectionPanelClass}
+        aria-labelledby="site-nav-heading"
+      >
         <h2 id="site-nav-heading" className={sectionTitle}>
           Navigation
         </h2>
@@ -420,7 +600,11 @@ function SiteGlobalSettingsSections({ initial }: { initial: AdminSiteFormValues 
         </div>
       </section>
 
-      <section className={panelClass} aria-labelledby="site-header-cta-heading">
+      <section
+        id="admin-site-header-cta"
+        className={sectionPanelClass}
+        aria-labelledby="site-header-cta-heading"
+      >
         <h2 id="site-header-cta-heading" className={sectionTitle}>
           Header CTA (optional)
         </h2>
@@ -454,7 +638,11 @@ function SiteGlobalSettingsSections({ initial }: { initial: AdminSiteFormValues 
         </div>
       </section>
 
-      <section className={panelClass} aria-labelledby="site-contact-heading">
+      <section
+        id="admin-site-contact"
+        className={sectionPanelClass}
+        aria-labelledby="site-contact-heading"
+      >
         <h2 id="site-contact-heading" className={sectionTitle}>
           Contact
         </h2>
@@ -556,7 +744,11 @@ function SiteGlobalSettingsSections({ initial }: { initial: AdminSiteFormValues 
         </div>
       </section>
 
-      <section className={panelClass} aria-labelledby="site-footer-heading">
+      <section
+        id="admin-site-footer"
+        className={sectionPanelClass}
+        aria-labelledby="site-footer-heading"
+      >
         <h2 id="site-footer-heading" className={sectionTitle}>
           Footer
         </h2>
@@ -641,7 +833,11 @@ function SiteHomeHeroSection({
   onHeroUrlsChange?: () => void;
 }) {
   return (
-    <section className={panelClass} aria-labelledby="site-home-hero-heading">
+    <section
+      id="admin-site-hero"
+      className={sectionPanelClass}
+      aria-labelledby="site-home-hero-heading"
+    >
       <h2 id="site-home-hero-heading" className={sectionTitle}>
         Hero
       </h2>
@@ -776,14 +972,32 @@ function SiteHomepageContentSection({
   initial: AdminSiteFormValues;
   projects: ProjectOption[];
 }) {
+  const [lead, setLead] = useState(initial.featuredProjectId1);
+  const [support1, setSupport1] = useState(initial.featuredProjectId2);
+  const [support2, setSupport2] = useState(initial.featuredProjectId3);
+
+  useEffect(() => {
+    setLead(initial.featuredProjectId1);
+    setSupport1(initial.featuredProjectId2);
+    setSupport2(initial.featuredProjectId3);
+  }, [initial.featuredProjectId1, initial.featuredProjectId2, initial.featuredProjectId3]);
+
+  const excludedForMoreWork = [lead, support1, support2]
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   return (
-    <section className={panelClass} aria-labelledby="site-homepage-content-heading">
+    <section
+      id="admin-site-homepage"
+      className={sectionPanelClass}
+      aria-labelledby="site-homepage-content-heading"
+    >
       <h2 id="site-homepage-content-heading" className={sectionTitle}>
         Homepage content
       </h2>
       <p className={sectionIntro}>
-        Section labels, selected work, more work, and approach content. Hero copy lives in the Hero section
-        above.
+        Section labels, approach content, and visibility. Curate Selected work and More work in the block
+        below. Hero copy lives in the Hero section above.
       </p>
 
       <div className="flex flex-col gap-6">
@@ -850,8 +1064,34 @@ function SiteHomepageContentSection({
           </div>
         </div>
 
-        <SiteHomeSelectedWorkFields initial={initial} projects={projects} />
-        <SiteHomeMoreWorkFields initial={initial} projects={projects} />
+        <div
+          id="admin-site-home-curation"
+          className={`border-t border-zinc-800/70 pt-4 ${sectionScrollClass}`}
+        >
+          <h3 className="mb-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">
+            Home project curation
+          </h3>
+          <p className="mb-5 max-w-prose text-[12px] leading-relaxed text-zinc-500">
+            Choose which projects appear in Selected work and how More work is filled (automatic or manual
+            list). Saving uses the same controls as the rest of this page.
+          </p>
+          <div className="flex flex-col gap-6">
+            <SiteHomeSelectedWorkFields
+              lead={lead}
+              support1={support1}
+              support2={support2}
+              onLeadChange={setLead}
+              onSupport1Change={setSupport1}
+              onSupport2Change={setSupport2}
+              projects={projects}
+            />
+            <SiteHomeMoreWorkFields
+              initial={initial}
+              projects={projects}
+              excludedProjectIds={excludedForMoreWork}
+            />
+          </div>
+        </div>
 
         <div className="border-t border-zinc-800/70 pt-4">
           <span className={`${labelClass} mb-3 block`}>Approach block</span>
@@ -1042,6 +1282,8 @@ export function SiteHomeForm({ initial, projects }: Props) {
             {state.error}
           </p>
         ) : null}
+
+        <SiteAdminInPageNav />
 
         <SiteGlobalSettingsSections initial={initial} />
         <SiteHomeHeroSection initial={initial} onHeroUrlsChange={checkDirty} />

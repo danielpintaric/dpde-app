@@ -28,11 +28,11 @@ export async function AdminAppHeader() {
           </Link>
 
           <nav className="flex min-w-0 flex-wrap items-center gap-1 sm:gap-2" aria-label="Admin">
-            <Link href="/admin/projects" className={navLinkClass}>
-              Projects
-            </Link>
             <Link href="/admin/site" className={navLinkClass}>
               Site
+            </Link>
+            <Link href="/admin/projects" className={navLinkClass}>
+              Projects
             </Link>
             <Link href="/admin/projects/new" className={navLinkClass}>
               New project

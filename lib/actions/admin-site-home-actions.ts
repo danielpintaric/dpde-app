@@ -167,6 +167,27 @@ export async function saveSiteHomeAction(
   }
   const home_more_work_manual_project_ids = manualIdsOrdered.slice(0, 12);
 
+  const featuredIdSet = new Set<string>();
+  if (id1) {
+    featuredIdSet.add(id1);
+  }
+  if (id2) {
+    featuredIdSet.add(id2);
+  }
+  if (id3) {
+    featuredIdSet.add(id3);
+  }
+  if (home_more_work_mode === "manual" && featuredIdSet.size > 0) {
+    for (const pid of home_more_work_manual_project_ids) {
+      if (featuredIdSet.has(pid)) {
+        return {
+          error:
+            "More work (manual): a project is also selected under Selected work (lead or support). Remove it from one section or choose another project.",
+        };
+      }
+    }
+  }
+
   const envBrand = getPublicConfig().brandName;
   const globalBrandName = String(formData.get("global_brand_name") ?? "").trim() || envBrand;
   const globalWordmark = nullIfEmpty(formData.get("global_wordmark_text"));
