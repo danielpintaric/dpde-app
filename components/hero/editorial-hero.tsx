@@ -285,6 +285,7 @@ export function EditorialHero({
                   width={1920}
                   height={1080}
                   decoding="async"
+                  fetchPriority="high"
                   draggable={false}
                   className={crossfadeImgClassName}
                 />
@@ -301,6 +302,7 @@ export function EditorialHero({
                   width={1920}
                   height={1080}
                   decoding="async"
+                  fetchPriority="low"
                   draggable={false}
                   className={crossfadeImgClassName}
                 />

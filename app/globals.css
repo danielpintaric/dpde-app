@@ -33,3 +33,9 @@ body {
 .editor-saved-enter {
   animation: editor-saved-enter 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* Next.js Dev-Tools: kein erzwungenes left/top:0 am Portal (wie im Inspector entfernt) */
+nextjs-portal {
+  left: unset;
+  top: unset;
+}

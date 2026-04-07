@@ -14,6 +14,8 @@ export type SiteGlobalNavItem = {
 
 export type SiteGlobalSettingsRow = {
   id: string;
+  /** Tenant id; FK to `sites.id`. Single row per site. */
+  site_id: string;
   brand_name: string;
   wordmark_text: string | null;
   logo_image_url: string | null;
@@ -56,9 +58,14 @@ export type ResolvedSiteGlobal = {
   headerBrandLabel: string | null;
   copyrightHolder: string;
   footerTagline: string;
+  /** Trimmed address when valid; empty string when none / invalid. */
   footerEmail: string;
+  /** `mailto:…` only when {@link hasValidContactEmail}; otherwise `""` (no link). */
   footerEmailMailto: string;
+  /** Link text (footer); falls back to email when no primary label. */
   footerEmailLinkLabel: string;
+  /** True when `footer_email` is non-empty and passes basic format checks (public mailto safe). */
+  hasValidContactEmail: boolean;
   instagramUrl: string | null;
   instagramLabel: string;
   footerCtaHref: string;

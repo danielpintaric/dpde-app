@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ClientImageActions } from "@/components/gallery/client-image-actions";
 import { EditorialGallery } from "@/components/gallery/editorial-gallery";
 import { PageMain } from "@/components/site-chrome";
 import {
@@ -26,7 +27,18 @@ export type PortfolioProjectViewProps = {
   basePath: string;
   indexHref: string;
   indexLabel: string;
+  /** When set (e.g. client share), prev/next links append `?token=…`. */
+  accessToken?: string | null;
+  /** Enables per-image downloads in the client token flow. */
+  clientDownload?: { token: string } | null;
+  /** When true, image selection is available (wrap page with ClientSelectionProvider). */
+  clientSelectionMode?: boolean;
 };
+
+function tokenQuerySuffix(accessToken: string | null | undefined): string {
+  const t = accessToken?.trim();
+  return t ? `?token=${encodeURIComponent(t)}` : "";
+}
 
 export function PortfolioProjectView({
   project,
@@ -35,7 +47,28 @@ export function PortfolioProjectView({
   basePath,
   indexHref,
   indexLabel,
+  accessToken,
+  clientDownload,
+  clientSelectionMode = false,
 }: PortfolioProjectViewProps) {
+  const navSuffix = tokenQuerySuffix(accessToken);
+  const galleryClientDownload =
+    clientDownload?.token.trim() && project.slug
+      ? { token: clientDownload.token.trim(), projectSlug: project.slug }
+      : undefined;
+
+  const coverAsset = project.coverImageId
+    ? project.images.find((im) => im.imageId === project.coverImageId)
+    : project.images[0];
+  const showCoverDownload =
+    galleryClientDownload &&
+    coverAsset?.imageId &&
+    coverAsset.storageBacked;
+  const showCoverActions =
+    galleryClientDownload &&
+    coverAsset?.imageId &&
+    (showCoverDownload || clientSelectionMode);
+
   return (
     <PageMain>
       <article className="pb-24 pt-28 sm:pb-28 sm:pt-28 lg:pb-32 lg:pt-28">
@@ -64,13 +97,29 @@ export function PortfolioProjectView({
           </div>
         </div>
 
-        <EditorialGallery images={getPortfolioBodyImages(project)} />
+        {showCoverActions && galleryClientDownload && coverAsset ? (
+          <div className="mx-auto mt-6 flex max-w-7xl justify-center px-6 sm:px-10 lg:px-16">
+            <ClientImageActions
+              image={coverAsset}
+              clientDownload={galleryClientDownload}
+              useClientSelection={clientSelectionMode}
+              downloadLinkLabel="Download lead image"
+              className="justify-center"
+            />
+          </div>
+        ) : null}
+
+        <EditorialGallery
+          images={getPortfolioBodyImages(project)}
+          clientDownload={galleryClientDownload}
+          useClientSelection={clientSelectionMode}
+        />
 
         <footer className="mt-20 border-t border-zinc-800/40 sm:mt-24 lg:mt-28">
           <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
             {next ? (
               <Link
-                href={`${basePath}/${next.slug}`}
+                href={`${basePath}/${next.slug}${navSuffix}`}
                 className={`group block cursor-pointer py-16 ${transitionQuick} sm:py-20 lg:py-24 ${focusRing} rounded-sm ${tapSoft}`}
               >
                 <span className={`${typeMeta} ${transitionColorsQuick} group-hover:text-zinc-400`}>
@@ -91,7 +140,7 @@ export function PortfolioProjectView({
               </Link>
               {prev ? (
                 <Link
-                  href={`${basePath}/${prev.slug}`}
+                  href={`${basePath}/${prev.slug}${navSuffix}`}
                   className={`text-left text-[11px] tracking-[0.04em] text-zinc-500 underline decoration-transparent underline-offset-[7px] ${transitionQuick} hover:text-zinc-400 hover:decoration-zinc-500/45 sm:text-right ${linkFocusVisible} ${tapSoft}`}
                 >
                   <span className="mr-2.5 text-zinc-600">Previous</span>

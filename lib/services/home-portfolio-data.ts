@@ -11,6 +11,7 @@ import {
 } from "@/lib/portfolio-data";
 import { getPublishedProjectByIdPublic, listPublishedProjectsPublic } from "@/lib/db/projects-public";
 import { fetchSiteLandingSettingsPublic } from "@/lib/db/site-landing-public";
+import { DEFAULT_SITE_ID } from "@/lib/site-defaults";
 import { clampHomeMoreWorkCount } from "@/lib/home-more-work-settings";
 import { loadPortfolioProjectBySlug } from "@/lib/services/portfolio-view-data";
 import { resolveHomeFeaturedProjectSlugs } from "@/lib/services/site-landing";
@@ -238,18 +239,20 @@ async function getLegacyStaticMoreWorkTiles(): Promise<HomeMoreWorkTile[]> {
  * Second layer unter „Selected work“: DB-driven (auto/manual + count) wenn Portfolio nicht static;
  * sonst gleiche Slots wie {@link HOME_MOSAIC_SLOTS}.
  */
-export async function getHomeMoreWorkTiles(): Promise<HomeMoreWorkTile[]> {
+export async function getHomeMoreWorkTiles(
+  siteId: string = DEFAULT_SITE_ID,
+): Promise<HomeMoreWorkTile[]> {
   if (portfolioDataIsStaticHome()) {
     return getLegacyStaticMoreWorkTiles();
   }
 
-  const row = await fetchSiteLandingSettingsPublic();
+  const row = await fetchSiteLandingSettingsPublic(siteId);
   const count = clampHomeMoreWorkCount(row?.home_more_work_count);
   const mode = row?.home_more_work_mode === "manual" ? "manual" : "auto";
 
   let featuredSlugs: string[] = [];
   try {
-    featuredSlugs = await resolveHomeFeaturedProjectSlugs();
+    featuredSlugs = await resolveHomeFeaturedProjectSlugs(siteId);
   } catch {
     featuredSlugs = [];
   }

@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useOptionalClientSelection } from "@/components/client/client-selection-context";
+import { downloadClientSelectionZipPost } from "@/lib/client-download-link";
 import type { ProjectImage } from "@/lib/portfolio-data";
+import { linkFocusVisible, tapSoft, transitionQuick, typeMeta } from "@/lib/editorial";
 import { GalleryFrame } from "./gallery-frame";
 import { Lightbox } from "./lightbox";
 
@@ -96,32 +99,93 @@ function splitRightExtraClass(splitIndex: number): string {
   return SPLIT_RIGHT_OFFSET[splitIndex % SPLIT_RIGHT_OFFSET.length] ?? "";
 }
 
+function splitRowsBefore(rows: EditorialRow[], rowIndex: number): number {
+  let n = 0;
+  for (let i = 0; i < rowIndex; i++) {
+    if (rows[i]?.kind === "split") {
+      n += 1;
+    }
+  }
+  return n;
+}
+
 type EditorialGalleryProps = {
   images: ProjectImage[];
+  clientDownload?: { token: string; projectSlug: string };
+  /** When true, show selection controls (requires ClientSelectionProvider on the page). */
+  useClientSelection?: boolean;
 };
 
-export function EditorialGallery({ images }: EditorialGalleryProps) {
+export function EditorialGallery({
+  images,
+  clientDownload,
+  useClientSelection = false,
+}: EditorialGalleryProps) {
   const rows = buildEditorialRows(images);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [zipBusy, setZipBusy] = useState(false);
+  const [zipHint, setZipHint] = useState<string | null>(null);
+  const selection = useOptionalClientSelection();
+
+  const handleDownloadSelected = useCallback(async () => {
+    if (!selection || selection.selectedCount === 0) {
+      return;
+    }
+    setZipHint(null);
+    setZipBusy(true);
+    const result = await downloadClientSelectionZipPost(selection.token, selection.projectSlug);
+    setZipBusy(false);
+    if (!result.ok) {
+      setZipHint(result.message);
+    }
+  }, [selection]);
 
   const openAt = useCallback((index: number) => {
     setLightboxIndex(index);
     setLightboxOpen(true);
-  }, []);
+  }, [setLightboxIndex, setLightboxOpen]);
 
   const closeLightbox = useCallback(() => {
     setLightboxOpen(false);
-  }, []);
+  }, [setLightboxOpen]);
 
   if (rows.length === 0) return null;
 
-  let splitIndex = 0;
+  const showSelectionSummary =
+    Boolean(useClientSelection && selection) && (selection?.selectedCount ?? 0) > 0;
 
   return (
     <>
       <section className="mt-12 border-t border-zinc-800/40 pb-10 pt-12 sm:mt-14 sm:pt-14 sm:pb-12 lg:mt-16 lg:pt-16 lg:pb-14">
         <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
+          {showSelectionSummary && selection ? (
+            <div
+              className={`${typeMeta} mb-10 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-zinc-500`}
+            >
+              <p className="m-0">
+                {selection.selectedCount === 1
+                  ? "1 image selected"
+                  : `${selection.selectedCount} images selected`}
+              </p>
+              <span className="inline-flex flex-col items-start gap-1">
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadSelected()}
+                  disabled={zipBusy}
+                  aria-busy={zipBusy}
+                  className={`cursor-pointer border-0 bg-transparent p-0 font-inherit text-[11px] font-normal tracking-[0.04em] underline decoration-zinc-700/35 underline-offset-[6px] ${transitionQuick} hover:text-zinc-400 hover:decoration-zinc-600/45 disabled:cursor-wait disabled:opacity-60 ${linkFocusVisible} ${tapSoft}`}
+                >
+                  {`Download selected (${selection.selectedCount})`}
+                </button>
+                {zipHint ? (
+                  <span className="max-w-[18rem] text-[10px] leading-snug text-red-400/90" role="status">
+                    {zipHint}
+                  </span>
+                ) : null}
+              </span>
+            </div>
+          ) : null}
           {rows.map((row, rowIndex) => {
             if (row.kind === "full") {
               return (
@@ -130,14 +194,15 @@ export function EditorialGallery({ images }: EditorialGalleryProps) {
                     image={row.image}
                     aspectClass={row.image.aspectClass}
                     sizes="(min-width: 1280px) min(72rem, 90vw), (min-width: 768px) 90vw, 100vw"
+                    clientDownload={clientDownload}
+                    useClientSelection={useClientSelection}
                     onOpen={() => openAt(row.index)}
                   />
                 </div>
               );
             }
 
-            const si = splitIndex;
-            splitIndex += 1;
+            const si = splitRowsBefore(rows, rowIndex);
 
             const { left, right, leftSpan, rightSpan, leftIndex, rightIndex } = row;
             const leftSpanClass = lgColSpan(leftSpan);
@@ -154,6 +219,8 @@ export function EditorialGallery({ images }: EditorialGalleryProps) {
                     image={left}
                     aspectClass={left.aspectClass}
                     sizes="(min-width: 1280px) 45vw, (min-width: 768px) 46vw, 100vw"
+                    clientDownload={clientDownload}
+                    useClientSelection={useClientSelection}
                     onOpen={() => openAt(leftIndex)}
                   />
                 </div>
@@ -164,6 +231,8 @@ export function EditorialGallery({ images }: EditorialGalleryProps) {
                     image={right}
                     aspectClass={right.aspectClass}
                     sizes="(min-width: 1280px) 40vw, (min-width: 768px) 46vw, 100vw"
+                    clientDownload={clientDownload}
+                    useClientSelection={useClientSelection}
                     onOpen={() => openAt(rightIndex)}
                   />
                 </div>

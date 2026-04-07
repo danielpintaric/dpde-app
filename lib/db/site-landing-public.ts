@@ -4,20 +4,21 @@ import { SupabaseConfigError } from "@/lib/db/supabase-env";
 import { createSupabasePublicClient } from "@/lib/db/supabase-public";
 import { supabaseReadError } from "@/lib/db/supabase-read-error";
 import type { SiteLandingSettingsRow } from "@/types/site-landing";
-
-const ROW_ID = "default";
+import { DEFAULT_SITE_ID } from "@/lib/site-defaults";
 
 /**
  * Anonymous read of homepage landing config (homepage Server Components).
  * Returns `null` if Supabase is not configured, table is missing, or read fails.
  */
-export async function fetchSiteLandingSettingsPublic(): Promise<SiteLandingSettingsRow | null> {
+export async function fetchSiteLandingSettingsPublic(
+  siteId: string = DEFAULT_SITE_ID,
+): Promise<SiteLandingSettingsRow | null> {
   try {
     const supabase = createSupabasePublicClient();
     const { data, error } = await supabase
       .from("site_landing_settings")
       .select("*")
-      .eq("id", ROW_ID)
+      .eq("site_id", siteId)
       .maybeSingle();
 
     if (error) {

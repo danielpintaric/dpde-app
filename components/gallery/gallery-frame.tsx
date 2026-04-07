@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ProjectImage } from "@/lib/portfolio-data";
+import { ClientImageActions } from "@/components/gallery/client-image-actions";
 import {
   editorialImage,
   editorialImageOverlay,
@@ -16,11 +17,23 @@ export type GalleryFrameProps = {
   aspectClass?: string;
   /** Passed to next/image sizes for LCP-friendly hints */
   sizes?: string;
+  /** Token-based client area: per-image download link */
+  clientDownload?: { token: string; projectSlug: string };
+  /** Requires ClientSelectionProvider ancestor (client token project view). */
+  useClientSelection?: boolean;
   /** Opens lightbox when the image area is activated (click / keyboard) */
   onOpen?: () => void;
 };
 
-export function GalleryFrame({ image, className = "", aspectClass, sizes, onOpen }: GalleryFrameProps) {
+export function GalleryFrame({
+  image,
+  className = "",
+  aspectClass,
+  sizes,
+  clientDownload,
+  useClientSelection = false,
+  onOpen,
+}: GalleryFrameProps) {
   const ratio = aspectClass ?? image.aspectClass;
   const objectPosition = image.objectPosition ?? "center";
 
@@ -53,6 +66,14 @@ export function GalleryFrame({ image, className = "", aspectClass, sizes, onOpen
         <div className={`relative w-full origin-center overflow-hidden bg-zinc-900 ${ratio}`}>{media}</div>
       )}
       {image.caption ? <figcaption className={typeCaption}>{image.caption}</figcaption> : null}
+      {(clientDownload && image.imageId && image.storageBacked) ||
+      (useClientSelection && image.imageId) ? (
+        <ClientImageActions
+          image={image}
+          clientDownload={clientDownload}
+          useClientSelection={useClientSelection}
+        />
+      ) : null}
     </figure>
   );
 }

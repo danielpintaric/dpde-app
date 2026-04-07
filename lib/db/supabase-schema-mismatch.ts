@@ -6,6 +6,10 @@
 export const SITE_LANDING_SCHEMA_MISSING_MESSAGE_DE =
   "Die Home-Content-Felder sind in der Datenbank noch nicht verfügbar. Bitte die aktuelle Supabase-Migration für site_landing_settings anwenden und die Seite neu laden.";
 
+/** Multi-site migration (`site_id` on global/landing settings) not applied yet. */
+export const SITE_ID_SCHEMA_MISSING_MESSAGE_DE =
+  "Die Multi-Site-Datenbankfelder sind noch nicht verfügbar. Bitte die aktuelle Supabase-Migration für site_id anwenden und die Seite neu laden.";
+
 /** PostgREST codes are often embedded in wrapped Error messages, e.g. `[PGRST204]`. */
 export function extractPostgrestCodeFromMessage(message: string): string | undefined {
   const bracket = message.match(/\[\s*(PGRST\d+)\s*\]/i);
@@ -51,4 +55,44 @@ export function isMissingDbSchemaColumnError(message: string, code?: string): bo
     return m.includes("site_landing_settings");
   }
   return false;
+}
+
+/**
+ * Missing `site_id` on `site_global_settings` / `site_landing_settings` (STEP 8.9.1 migration).
+ * Checked before {@link isMissingDbSchemaColumnError} so we don’t show the generic landing copy.
+ */
+export function isMissingSiteIdColumnError(message: string, code?: string): boolean {
+  const m = message.toLowerCase();
+  if (!m.includes("site_id")) {
+    return false;
+  }
+  if (/\bcolumn\b[\s\S]*\bdoes not exist\b/i.test(message)) {
+    return true;
+  }
+  if (code === "42703") {
+    return true;
+  }
+  const postgrestFromMessage = extractPostgrestCodeFromMessage(message);
+  if (postgrestFromMessage === "PGRST204" || m.includes("pgrst204")) {
+    return true;
+  }
+  if (m.includes("could not find") && m.includes("in the schema cache")) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Admin `/admin/site`: maps raw Supabase/Postgres errors to short German guidance when the DB is behind.
+ * Falls back to `rawMessage` when unknown.
+ */
+export function friendlyAdminSiteDbError(rawMessage: string, code?: string): string {
+  const resolvedCode = code ?? extractPostgrestCodeFromMessage(rawMessage);
+  if (isMissingSiteIdColumnError(rawMessage, resolvedCode)) {
+    return SITE_ID_SCHEMA_MISSING_MESSAGE_DE;
+  }
+  if (isMissingDbSchemaColumnError(rawMessage, resolvedCode)) {
+    return SITE_LANDING_SCHEMA_MISSING_MESSAGE_DE;
+  }
+  return rawMessage;
 }

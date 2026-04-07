@@ -28,7 +28,7 @@ export function SiteFooter({ site }: SiteFooterProps) {
             <p className="mt-3 max-w-sm text-[12px] font-light leading-[1.65] tracking-[0.02em] text-zinc-500">
               {site.footerTagline}
             </p>
-            {site.footerEmail.trim().length > 0 ? (
+            {site.hasValidContactEmail ? (
               <p className="mt-4">
                 <a
                   href={site.footerEmailMailto}

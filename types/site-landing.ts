@@ -7,6 +7,8 @@
 
 export type SiteLandingSettingsRow = {
   id: string;
+  /** Tenant id; FK to `sites.id`. Single row per site. */
+  site_id: string;
   hero_title: string;
   hero_subtitle: string;
   hero_image_urls: unknown;

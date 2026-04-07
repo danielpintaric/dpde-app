@@ -1,6 +1,10 @@
 import { SiteHomeForm } from "@/components/admin/site-home-form";
 import { listProjects } from "@/lib/db/projects";
 import { getSupabaseProjectRefFromPublicUrl } from "@/lib/db/supabase-env";
+import {
+  extractPostgrestCodeFromMessage,
+  friendlyAdminSiteDbError,
+} from "@/lib/db/supabase-schema-mismatch";
 import { getSiteGlobalSettingsForAdmin } from "@/lib/db/site-global-admin";
 import { getSiteLandingSettingsForAdmin } from "@/lib/db/site-landing-admin";
 import { siteGlobalRowToFormValues } from "@/lib/services/site-global";
@@ -22,19 +26,36 @@ export default async function AdminSiteLandingPage() {
   try {
     row = await getSiteLandingSettingsForAdmin();
   } catch (e) {
-    loadError =
+    const raw =
       e instanceof Error
         ? e.message
         : "Could not load site settings. If the table is missing, apply the latest Supabase migration.";
+    const codeFromObject =
+      typeof e === "object" &&
+      e !== null &&
+      "code" in e &&
+      typeof (e as { code?: unknown }).code === "string"
+        ? (e as { code: string }).code
+        : undefined;
+    const code = codeFromObject ?? extractPostgrestCodeFromMessage(raw);
+    loadError = friendlyAdminSiteDbError(raw, code);
   }
   try {
     globalRow = await getSiteGlobalSettingsForAdmin();
   } catch (e) {
-    const msg =
+    const raw =
       e instanceof Error
         ? e.message
         : "Could not load global site settings. If the table is missing, apply the latest Supabase migration.";
-    loadError = loadError ?? msg;
+    const codeFromObject =
+      typeof e === "object" &&
+      e !== null &&
+      "code" in e &&
+      typeof (e as { code?: unknown }).code === "string"
+        ? (e as { code: string }).code
+        : undefined;
+    const code = codeFromObject ?? extractPostgrestCodeFromMessage(raw);
+    loadError = loadError ?? friendlyAdminSiteDbError(raw, code);
   }
 
   let projects: Awaited<ReturnType<typeof listProjects>> = [];

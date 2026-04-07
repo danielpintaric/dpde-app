@@ -22,6 +22,8 @@ function catalogImageToProjectImage(img: Image): ProjectImage {
   const row: ProjectImage = {
     src: resolveImageSrc(img),
     aspectClass,
+    imageId: img.id,
+    storageBacked: !Boolean(img.externalUrl?.trim()),
   };
   if (img.caption) {
     row.caption = img.caption;
@@ -79,6 +81,7 @@ export function mapDbProjectToPortfolioProject(
     intro,
     layoutType: project.layoutType,
     coverImage,
+    coverImageId: project.coverImageId,
     images: sortedImages.map(catalogImageToProjectImage),
   };
 }

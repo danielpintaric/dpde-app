@@ -3,12 +3,13 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/db/supabase-server";
 import { supabaseReadError } from "@/lib/db/supabase-read-error";
 import type { SiteLandingSettingsRow } from "@/types/site-landing";
+import { DEFAULT_SITE_ID } from "@/lib/site-defaults";
 
 /**
  * Single-row landing settings. Every column written in `upsertSiteLandingSettings` must exist in
  * `public.site_landing_settings` (Supabase/PostgREST); otherwise upserts fail with PGRST204 / schema cache errors.
- * Canonical column set: `supabase/migrations/20260413120000_site_landing_settings_upsert_full_sync.sql`
- * (idempotent `add column if not exists`), plus earlier migrations that introduced the table.
+ * Canonical column sync (run on DB): `supabase/migrations/20260415120000_site_landing_settings_upsert_complete_if_missing.sql`
+ * (idempotent `add column if not exists`; supersedes ad-hoc column fixes). Earlier migrations may have created the same columns.
  */
 const ROW_ID = "default";
 
@@ -17,7 +18,7 @@ export async function getSiteLandingSettingsForAdmin(): Promise<SiteLandingSetti
   const { data, error } = await supabase
     .from("site_landing_settings")
     .select("*")
-    .eq("id", ROW_ID)
+    .eq("site_id", DEFAULT_SITE_ID)
     .maybeSingle();
 
   if (error) {
@@ -59,33 +60,37 @@ export async function upsertSiteLandingSettings(
   input: SiteLandingUpsertPayload,
 ): Promise<void> {
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("site_landing_settings").upsert({
-    id: ROW_ID,
-    hero_title: input.hero_title,
-    hero_subtitle: input.hero_subtitle,
-    hero_image_urls: input.hero_image_urls,
-    hero_link_1_label: input.hero_link_1_label,
-    hero_link_1_href: input.hero_link_1_href,
-    hero_link_2_label: input.hero_link_2_label,
-    hero_link_2_href: input.hero_link_2_href,
-    featured_project_ids: input.featured_project_ids,
-    hero_interval_seconds: input.hero_interval_seconds,
-    home_selected_work_label: input.home_selected_work_label,
-    home_more_work_label: input.home_more_work_label,
-    home_show_selected_work: input.home_show_selected_work,
-    home_show_more_work: input.home_show_more_work,
-    home_show_approach: input.home_show_approach,
-    home_approach_kicker: input.home_approach_kicker,
-    home_approach_title: input.home_approach_title,
-    home_approach_body: input.home_approach_body,
-    home_approach_image_url: input.home_approach_image_url,
-    home_approach_cta_label: input.home_approach_cta_label,
-    home_approach_cta_href: input.home_approach_cta_href,
-    home_more_work_mode: input.home_more_work_mode,
-    home_more_work_count: input.home_more_work_count,
-    home_more_work_manual_project_ids: input.home_more_work_manual_project_ids,
-    updated_at: new Date().toISOString(),
-  });
+  const { error } = await supabase.from("site_landing_settings").upsert(
+    {
+      id: ROW_ID,
+      site_id: DEFAULT_SITE_ID,
+      hero_title: input.hero_title,
+      hero_subtitle: input.hero_subtitle,
+      hero_image_urls: input.hero_image_urls,
+      hero_link_1_label: input.hero_link_1_label,
+      hero_link_1_href: input.hero_link_1_href,
+      hero_link_2_label: input.hero_link_2_label,
+      hero_link_2_href: input.hero_link_2_href,
+      featured_project_ids: input.featured_project_ids,
+      hero_interval_seconds: input.hero_interval_seconds,
+      home_selected_work_label: input.home_selected_work_label,
+      home_more_work_label: input.home_more_work_label,
+      home_show_selected_work: input.home_show_selected_work,
+      home_show_more_work: input.home_show_more_work,
+      home_show_approach: input.home_show_approach,
+      home_approach_kicker: input.home_approach_kicker,
+      home_approach_title: input.home_approach_title,
+      home_approach_body: input.home_approach_body,
+      home_approach_image_url: input.home_approach_image_url,
+      home_approach_cta_label: input.home_approach_cta_label,
+      home_approach_cta_href: input.home_approach_cta_href,
+      home_more_work_mode: input.home_more_work_mode,
+      home_more_work_count: input.home_more_work_count,
+      home_more_work_manual_project_ids: input.home_more_work_manual_project_ids,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "site_id" },
+  );
 
   if (error) {
     throw supabaseReadError("site_landing_settings upsert", error.message, error.code);

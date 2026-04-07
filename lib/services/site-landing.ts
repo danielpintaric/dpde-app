@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { fetchSiteLandingSettingsPublic } from "@/lib/db/site-landing-public";
+import { DEFAULT_SITE_ID } from "@/lib/site-defaults";
 import { getPublishedProjectByIdPublic } from "@/lib/db/projects-public";
 import { loadPortfolioProjectBySlug } from "@/lib/services/portfolio-view-data";
 import {
@@ -164,8 +165,10 @@ function mergeHero(row: SiteLandingSettingsRow | null): ResolvedLandingHero {
 /**
  * Homepage hero copy + images + links (DB row merged with {@link portfolio-data} defaults).
  */
-export async function getResolvedLandingHero(): Promise<ResolvedLandingHero> {
-  const row = await fetchSiteLandingSettingsPublic();
+export async function getResolvedLandingHero(
+  siteId: string = DEFAULT_SITE_ID,
+): Promise<ResolvedLandingHero> {
+  const row = await fetchSiteLandingSettingsPublic(siteId);
   return mergeHero(row);
 }
 
@@ -207,10 +210,12 @@ function mergeHomeContent(row: SiteLandingSettingsRow | null): ResolvedHomeConte
 }
 
 /** Section labels, approach copy, and visibility for `/` (same DB row as hero). */
-export const getResolvedHomeContent = cache(async (): Promise<ResolvedHomeContent> => {
-  const row = await fetchSiteLandingSettingsPublic();
-  return mergeHomeContent(row);
-});
+export const getResolvedHomeContent = cache(
+  async (siteId: string = DEFAULT_SITE_ID): Promise<ResolvedHomeContent> => {
+    const row = await fetchSiteLandingSettingsPublic(siteId);
+    return mergeHomeContent(row);
+  },
+);
 
 const FALLBACK_FEATURED_SLUGS: string[] = [...HOME_FEATURED_SLUGS];
 
@@ -218,12 +223,14 @@ const FALLBACK_FEATURED_SLUGS: string[] = [...HOME_FEATURED_SLUGS];
  * Ordered slug list for the featured strip. Uses DB project ids when portfolio is not static
  * and the row defines ids; otherwise falls back to {@link HOME_FEATURED_SLUGS}.
  */
-export async function resolveHomeFeaturedProjectSlugs(): Promise<string[]> {
+export async function resolveHomeFeaturedProjectSlugs(
+  siteId: string = DEFAULT_SITE_ID,
+): Promise<string[]> {
   if (portfolioDataIsStatic()) {
     return [...FALLBACK_FEATURED_SLUGS];
   }
 
-  const row = await fetchSiteLandingSettingsPublic();
+  const row = await fetchSiteLandingSettingsPublic(siteId);
   const [lead, s1, s2] = parseFeaturedProjectIdsTriple(row?.featured_project_ids);
   const orderedUniqueIds: string[] = [];
   const seen = new Set<string>();

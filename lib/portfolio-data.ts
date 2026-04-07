@@ -10,6 +10,10 @@ export type ProjectImage = {
   caption?: string;
   /** CSS object-position for editorial crop */
   objectPosition?: string;
+  /** DB `images.id` when loaded from Supabase (client downloads). */
+  imageId?: string;
+  /** False when `external_url` is set — no bucket file to download. */
+  storageBacked?: boolean;
 };
 
 export type PortfolioProject = {
@@ -21,6 +25,8 @@ export type PortfolioProject = {
   intro: string;
   layoutType: GalleryLayoutType;
   coverImage: string;
+  /** Cover row id when from DB — optional for static portfolio data. */
+  coverImageId?: string | null;
   images: ProjectImage[];
 };
 

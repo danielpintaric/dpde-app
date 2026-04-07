@@ -6,14 +6,14 @@ import { upsertSiteLandingSettings } from "@/lib/db/site-landing-admin";
 import { upsertSiteGlobalSettings } from "@/lib/db/site-global-admin";
 import {
   extractPostgrestCodeFromMessage,
-  isMissingDbSchemaColumnError,
-  SITE_LANDING_SCHEMA_MISSING_MESSAGE_DE,
+  friendlyAdminSiteDbError,
 } from "@/lib/db/supabase-schema-mismatch";
 import {
   clampHeroIntervalSeconds,
   LANDING_HERO_DEFAULT_INTERVAL_SECONDS,
 } from "@/lib/hero-site-interval";
 import { clampHomeMoreWorkCount } from "@/lib/home-more-work-settings";
+import { isPlausibleEmailAddress } from "@/lib/email-utils";
 import { getPublicConfig } from "@/lib/public-config";
 import type { SiteGlobalNavItem } from "@/types/site-global";
 
@@ -194,7 +194,13 @@ export async function saveSiteHomeAction(
   const globalLogoUrl = nullIfEmpty(formData.get("global_logo_image_url"));
   const globalCopyright = nullIfEmpty(formData.get("global_copyright_holder"));
   const globalFooterTagline = nullIfEmpty(formData.get("global_footer_tagline"));
-  const globalFooterEmail = nullIfEmpty(formData.get("global_footer_email"));
+  const globalFooterEmailTrimmed = String(formData.get("global_footer_email") ?? "").trim();
+  if (globalFooterEmailTrimmed.length > 0 && !isPlausibleEmailAddress(globalFooterEmailTrimmed)) {
+    return {
+      error: "Please enter a valid email address, or leave this field empty.",
+    };
+  }
+  const globalFooterEmailForDb = globalFooterEmailTrimmed;
   const globalIgUrl = nullIfEmpty(formData.get("global_footer_instagram_url"));
   const globalIgLabel = nullIfEmpty(formData.get("global_footer_instagram_label"));
   const globalCtaHref = nullIfEmpty(formData.get("global_footer_cta_href"));
@@ -280,10 +286,7 @@ export async function saveSiteHomeAction(
         : undefined;
     const code = codeFromObject ?? extractPostgrestCodeFromMessage(rawMessage);
     console.error("[admin/site] site_landing_settings upsert failed:", e);
-    if (isMissingDbSchemaColumnError(rawMessage, code)) {
-      return { error: SITE_LANDING_SCHEMA_MISSING_MESSAGE_DE };
-    }
-    return { error: rawMessage };
+    return { error: friendlyAdminSiteDbError(rawMessage, code) };
   }
 
   try {
@@ -293,7 +296,7 @@ export async function saveSiteHomeAction(
       logo_image_url: globalLogoUrl,
       copyright_holder: globalCopyright,
       footer_tagline: globalFooterTagline,
-      footer_email: globalFooterEmail,
+      footer_email: globalFooterEmailForDb,
       footer_instagram_url: globalIgUrl,
       footer_instagram_label: globalIgLabel,
       footer_cta_href: globalCtaHref,
@@ -311,9 +314,17 @@ export async function saveSiteHomeAction(
       contact_phone: globalContactPhone,
     });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Could not save.";
+    const rawMessage = e instanceof Error ? e.message : "Could not save.";
+    const codeFromObject =
+      typeof e === "object" &&
+      e !== null &&
+      "code" in e &&
+      typeof (e as { code?: unknown }).code === "string"
+        ? (e as { code: string }).code
+        : undefined;
+    const code = codeFromObject ?? extractPostgrestCodeFromMessage(rawMessage);
     console.error("[admin/site] site_global_settings upsert failed:", e);
-    return { error: message };
+    return { error: friendlyAdminSiteDbError(rawMessage, code) };
   }
 
   revalidatePath("/");

@@ -6,6 +6,20 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const hasClientShareToken = request.nextUrl.searchParams.has("token");
+  const isClientLogin = path === "/client/login";
+  /** Token-Clientfläche: ohne Session-Refresh ausliefern — vermeidet Blockaden durch `getUser()` (langsames/fehlendes Supabase). */
+  const isClientLanding = path === "/client" || path === "/client/";
+  const isClientTokenSubPath =
+    path.startsWith("/client/") && !isClientLogin && hasClientShareToken;
+
+  if (isClientLanding || isClientTokenSubPath) {
+    return NextResponse.next({
+      request: { headers: request.headers },
+    });
+  }
+
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
@@ -39,7 +53,6 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
   const adminAllowlist = parseAdminEmailAllowlist(process.env.ADMIN_EMAILS);
 
   const isAdminLogin = path === "/admin/login";
@@ -60,9 +73,11 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  const isClientLogin = path === "/client/login";
   const isClientArea = path.startsWith("/client");
-  if (isClientArea && !isClientLogin && !user) {
+  if (isClientArea && !isClientLogin && !isClientLanding && !user) {
+    if (hasClientShareToken) {
+      return response;
+    }
     return NextResponse.redirect(new URL("/client/login", request.url));
   }
   if (isClientLogin && user) {
@@ -73,5 +88,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/client/:path*"],
+  matcher: ["/admin/:path*", "/client", "/client/:path*"],
 };

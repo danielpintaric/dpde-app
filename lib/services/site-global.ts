@@ -3,6 +3,8 @@ import "server-only";
 import { cache } from "react";
 import { fetchSiteGlobalSettingsPublic } from "@/lib/db/site-global-public";
 import { getPublicConfig } from "@/lib/public-config";
+import { isPlausibleEmailAddress, sanitizeEmailForMailto } from "@/lib/email-utils";
+import { DEFAULT_SITE_ID } from "@/lib/site-defaults";
 import type {
   ResolvedNavItem,
   ResolvedSiteGlobal,
@@ -71,7 +73,27 @@ function mergeRow(row: SiteGlobalSettingsRow | null): ResolvedSiteGlobal {
   const wordmarkText = trimOrNull(row?.wordmark_text) ?? brandName;
   const copyrightHolder = trimOrNull(row?.copyright_holder) ?? brandName;
   const footerTagline = trimOrNull(row?.footer_tagline) ?? SITE_GLOBAL_DEFAULT_FOOTER_TAGLINE;
-  const footerEmail = trimOrNull(row?.footer_email) ?? SITE_GLOBAL_DEFAULT_FOOTER_EMAIL;
+
+  let footerEmailRaw: string;
+  if (!hasRow) {
+    footerEmailRaw = SITE_GLOBAL_DEFAULT_FOOTER_EMAIL;
+  } else if (row?.footer_email === null || row?.footer_email === undefined) {
+    footerEmailRaw = SITE_GLOBAL_DEFAULT_FOOTER_EMAIL;
+  } else {
+    footerEmailRaw = String(row.footer_email).trim();
+  }
+
+  const hasValidContactEmail =
+    footerEmailRaw.length > 0 && isPlausibleEmailAddress(footerEmailRaw);
+  const footerEmailSanitized = hasValidContactEmail
+    ? sanitizeEmailForMailto(footerEmailRaw)
+    : "";
+  const footerEmail = footerEmailSanitized;
+  const footerEmailMailto =
+    hasValidContactEmail && footerEmailSanitized.length > 0
+      ? `mailto:${footerEmailSanitized}`
+      : "";
+
   const instagramUrl = hasRow
     ? trimOrNull(row?.footer_instagram_url)
     : SITE_GLOBAL_DEFAULT_INSTAGRAM_URL;
@@ -93,9 +115,8 @@ function mergeRow(row: SiteGlobalSettingsRow | null): ResolvedSiteGlobal {
   const headerCtaLabel = trimOrNull(row?.header_cta_label);
   const headerCtaHref = trimOrNull(row?.header_cta_href);
 
-  const footerEmailLinkLabel = primaryContactLabel ?? footerEmail;
-  const safeEmail = footerEmail.replace(/[\s<>]/g, "");
-  const footerEmailMailto = safeEmail.length > 0 ? `mailto:${safeEmail}` : "mailto:";
+  const footerEmailLinkLabel =
+    primaryContactLabel ?? (hasValidContactEmail ? footerEmail : "");
 
   return {
     brandName,
@@ -108,6 +129,7 @@ function mergeRow(row: SiteGlobalSettingsRow | null): ResolvedSiteGlobal {
     footerEmail,
     footerEmailMailto,
     footerEmailLinkLabel,
+    hasValidContactEmail,
     instagramUrl,
     instagramLabel,
     footerCtaHref,
@@ -127,10 +149,12 @@ function mergeRow(row: SiteGlobalSettingsRow | null): ResolvedSiteGlobal {
 /**
  * Cached per request — use in layout, metadata, and public shell.
  */
-export const getResolvedSiteGlobal = cache(async (): Promise<ResolvedSiteGlobal> => {
-  const row = await fetchSiteGlobalSettingsPublic();
-  return mergeRow(row);
-});
+export const getResolvedSiteGlobal = cache(
+  async (siteId: string = DEFAULT_SITE_ID): Promise<ResolvedSiteGlobal> => {
+    const row = await fetchSiteGlobalSettingsPublic(siteId);
+    return mergeRow(row);
+  },
+);
 
 function navToFormSlots(items: ResolvedNavItem[]): {
   nav1Label: string;
@@ -182,7 +206,10 @@ export function siteGlobalRowToFormValues(row: SiteGlobalSettingsRow | null): Si
     logoImageUrl: seeded ? "" : trimOrEmpty(row.logo_image_url),
     copyrightHolder: seeded ? "" : trimOrEmpty(row.copyright_holder),
     footerTagline: seeded ? SITE_GLOBAL_DEFAULT_FOOTER_TAGLINE : trimOrEmpty(row.footer_tagline),
-    footerEmail: seeded ? SITE_GLOBAL_DEFAULT_FOOTER_EMAIL : trimOrEmpty(row.footer_email),
+    footerEmail:
+      seeded || row?.footer_email === null || row?.footer_email === undefined
+        ? SITE_GLOBAL_DEFAULT_FOOTER_EMAIL
+        : String(row.footer_email).trim(),
     footerInstagramUrl: seeded ? SITE_GLOBAL_DEFAULT_INSTAGRAM_URL : trimOrEmpty(row.footer_instagram_url),
     footerInstagramLabel: seeded ? SITE_GLOBAL_DEFAULT_INSTAGRAM_LABEL : trimOrEmpty(row.footer_instagram_label),
     footerCtaHref: seeded ? SITE_GLOBAL_DEFAULT_CTA_HREF : trimOrEmpty(row.footer_cta_href),

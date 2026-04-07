@@ -11,9 +11,11 @@ import type { AdminProjectListEntry } from "@/types/admin";
 
 type Props = {
   entry: AdminProjectListEntry;
+  /** First featured card only — LCP-friendly fetch without eager-loading every tile. */
+  priority?: boolean;
 };
 
-export function AdminProjectHeroCard({ entry }: Props) {
+export function AdminProjectHeroCard({ entry, priority = false }: Props) {
   const { project, imageCount, coverImage } = entry;
   const href = `/admin/projects/${project.id}/edit`;
   const year = yearHint(project);
@@ -33,6 +35,7 @@ export function AdminProjectHeroCard({ entry }: Props) {
               alt=""
               fill
               unoptimized
+              priority={priority}
               className="object-cover object-center transition-transform duration-300 ease-out group-hover/hero:scale-[1.02]"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />

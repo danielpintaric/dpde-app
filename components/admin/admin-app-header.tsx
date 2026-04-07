@@ -31,6 +31,9 @@ export async function AdminAppHeader() {
             <Link href="/admin/site" className={navLinkClass}>
               Site
             </Link>
+            <Link href="/admin/client-access" className={navLinkClass}>
+              Client access
+            </Link>
             <Link href="/admin/projects" className={navLinkClass}>
               Projects
             </Link>
