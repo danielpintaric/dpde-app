@@ -26,3 +26,21 @@ export function getSupabasePublicConfig(): SupabasePublicConfig {
   }
   return { url, anonKey };
 }
+
+/**
+ * Project ref from `NEXT_PUBLIC_SUPABASE_URL` host (`<ref>.supabase.co`).
+ * Safe to log for diagnostics — not a secret.
+ */
+export function getSupabaseProjectRefFromPublicUrl(): string | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  if (!url) {
+    return null;
+  }
+  try {
+    const host = new URL(url).hostname;
+    const m = /^([^.]+)\.supabase\.co$/i.exec(host);
+    return m?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}

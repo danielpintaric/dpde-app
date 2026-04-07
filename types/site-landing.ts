@@ -1,6 +1,8 @@
 /**
  * Public site settings for the homepage (Phase 1).
  * Maps to `public.site_landing_settings` (single row `id = default`).
+ * DB columns must cover `upsertSiteLandingSettings` in `lib/db/site-landing-admin.ts`
+ * (see `supabase/migrations/20260413120000_site_landing_settings_upsert_full_sync.sql`).
  */
 
 export type SiteLandingSettingsRow = {

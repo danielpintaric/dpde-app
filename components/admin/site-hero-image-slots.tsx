@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { tryParseProjectImageStoragePathFromPublicUrl } from "@/lib/storage/parse-project-image-public-url";
 
 const previewFrame =
@@ -41,6 +41,7 @@ export function SiteHeroImageSlots({
   ]);
   const [error, setError] = useState<string | null>(null);
   const [busySlot, setBusySlot] = useState<number | null>(null);
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([null, null, null, null]);
 
   const setUrlAt = (i: SlotIndex, v: string) => {
     setUrls((prev) => {
@@ -134,7 +135,32 @@ export function SiteHeroImageSlots({
                 {url ? (
                   <img src={url} alt="" className={imgClass} />
                 ) : (
-                  <div className="flex h-full min-h-[7.5rem] items-center justify-center px-4 text-center text-[11px] text-zinc-600">
+                  <div
+                    role="button"
+                    tabIndex={busy ? -1 : 0}
+                    className={`flex h-full min-h-[7.5rem] items-center justify-center px-4 text-center text-[11px] text-zinc-600 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-zinc-500/50 ${
+                      busy
+                        ? "cursor-not-allowed opacity-70"
+                        : "cursor-pointer hover:bg-zinc-900/55 hover:text-zinc-500"
+                    }`}
+                    aria-label={`Upload image for ${label}`}
+                    aria-disabled={busy}
+                    onClick={() => {
+                      if (busy) {
+                        return;
+                      }
+                      fileInputRefs.current[i]?.click();
+                    }}
+                    onKeyDown={(e) => {
+                      if (busy) {
+                        return;
+                      }
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        fileInputRefs.current[i]?.click();
+                      }
+                    }}
+                  >
                     No image in this slot. Upload stores the file in site storage and fills the slot — use
                     Save below to publish URLs to the landing page.
                   </div>
@@ -143,6 +169,9 @@ export function SiteHeroImageSlots({
               <input type="hidden" name={`hero_image_${slot}`} value={urls[i]} />
               <div className={btnRow}>
                 <input
+                  ref={(el) => {
+                    fileInputRefs.current[i] = el;
+                  }}
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
                   className={fileInputClass}

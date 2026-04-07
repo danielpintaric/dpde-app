@@ -1,5 +1,6 @@
 import { SiteHomeForm } from "@/components/admin/site-home-form";
 import { listProjects } from "@/lib/db/projects";
+import { getSupabaseProjectRefFromPublicUrl } from "@/lib/db/supabase-env";
 import { getSiteGlobalSettingsForAdmin } from "@/lib/db/site-global-admin";
 import { getSiteLandingSettingsForAdmin } from "@/lib/db/site-landing-admin";
 import { siteGlobalRowToFormValues } from "@/lib/services/site-global";
@@ -9,6 +10,12 @@ import type { AdminSiteFormValues } from "@/types/site-global";
 export const dynamic = "force-dynamic";
 
 export default async function AdminSiteLandingPage() {
+  if (process.env.NODE_ENV === "development") {
+    const ref = getSupabaseProjectRefFromPublicUrl();
+    if (ref) {
+      console.info("[admin/site] Active Supabase project ref (from NEXT_PUBLIC_SUPABASE_URL):", ref);
+    }
+  }
   let row = null;
   let globalRow = null;
   let loadError: string | null = null;

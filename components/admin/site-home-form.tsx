@@ -1261,9 +1261,11 @@ export function SiteHomeForm({ initial, projects }: Props) {
     saveLabel = "Save changes";
   }
 
-  const saveButtonClass = `${editorSaveButtonPrimaryClass} w-full justify-center px-6 py-2.5 text-sm sm:min-w-[12rem] sm:justify-center ${
+  const saveButtonClass = `${editorSaveButtonPrimaryClass} w-full shrink-0 justify-center px-5 py-2.5 text-sm sm:w-auto sm:min-w-[11.5rem] ${
     saveDisabled && !pending ? "opacity-60" : ""
   }`;
+
+  const saveBarAriaLive = state?.error ? "assertive" : "polite";
 
   return (
     <form
@@ -1274,15 +1276,6 @@ export function SiteHomeForm({ initial, projects }: Props) {
       onChange={checkDirty}
     >
       <div className={formMainClass}>
-        {state?.error ? (
-          <p
-            className="rounded-lg border border-red-900/50 bg-red-950/25 px-3 py-2 text-sm text-red-200/95"
-            role="alert"
-          >
-            {state.error}
-          </p>
-        ) : null}
-
         <SiteAdminInPageNav />
 
         <SiteGlobalSettingsSections initial={initial} />
@@ -1290,15 +1283,37 @@ export function SiteHomeForm({ initial, projects }: Props) {
         <SiteHomepageContentSection initial={initial} projects={projects} />
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
-        <div className="pointer-events-auto w-full max-w-5xl border-t border-zinc-800/90 bg-zinc-950/95 px-4 py-3 shadow-[0_-12px_40px_rgba(0,0,0,0.45)] backdrop-blur-md supports-[backdrop-filter]:bg-zinc-950/80 sm:px-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <p
-              className={`min-h-[1.25rem] text-[12px] ${savedFlash && !dirty ? "text-emerald-400/90" : "text-transparent"}`}
-              aria-live="polite"
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pt-2 sm:px-4">
+        <div
+          className={`pointer-events-auto w-full max-w-5xl border-t border-x border-zinc-800/75 bg-zinc-900/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-8px_32px_rgba(0,0,0,0.38)] backdrop-blur-md supports-[backdrop-filter]:bg-zinc-900/88 sm:rounded-t-xl sm:px-5 sm:pt-3.5 ${
+            state?.error ? "border-red-900/35 sm:border-t-red-900/40" : ""
+          }`}
+        >
+          <div className="flex min-h-[2.75rem] flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5">
+            <div
+              className="min-w-0 flex-1"
+              role={state?.error ? "alert" : "status"}
+              aria-live={saveBarAriaLive}
+              aria-relevant="additions text"
             >
-              {savedFlash && !dirty ? "Settings saved." : "\u00a0"}
-            </p>
+              {pending ? (
+                <p className="text-[13px] font-medium leading-snug text-zinc-400">Saving...</p>
+              ) : state?.error ? (
+                <div className="rounded-md border border-red-900/40 bg-red-950/50 px-2.5 py-2 ring-1 ring-inset ring-red-500/10">
+                  <p className="max-h-[4.75rem] overflow-y-auto text-[13px] font-medium leading-snug text-red-100/95 [overflow-wrap:anywhere] [scrollbar-width:thin]">
+                    {state.error}
+                  </p>
+                </div>
+              ) : savedFlash && !dirty ? (
+                <p className="text-[13px] font-medium leading-snug text-emerald-400/95">Settings saved.</p>
+              ) : !dirty ? (
+                <p className="text-[13px] font-medium leading-snug text-zinc-500">No changes</p>
+              ) : (
+                <p className="min-h-[1.25rem] text-[13px] text-transparent" aria-hidden>
+                  {"\u00a0"}
+                </p>
+              )}
+            </div>
             <button
               type="submit"
               className={saveButtonClass}

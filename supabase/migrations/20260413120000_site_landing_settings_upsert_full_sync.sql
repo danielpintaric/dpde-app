@@ -1,0 +1,50 @@
+-- STEP 8.8.7a — Full column sync for public.site_landing_settings ↔ upsertSiteLandingSettings (lib/db/site-landing-admin.ts).
+-- Re-apply safe: only ADD COLUMN IF NOT EXISTS. Does not rename/drop columns.
+--
+-- Written payload keys (plus PK id): see SiteLandingUpsertPayload + id + updated_at in site-landing-admin.ts
+--
+-- Columns touched by upsert:
+--   id (PK), hero_title, hero_subtitle, hero_image_urls,
+--   hero_link_1_label, hero_link_1_href, hero_link_2_label, hero_link_2_href,
+--   featured_project_ids, hero_interval_seconds,
+--   home_selected_work_label, home_more_work_label,
+--   home_show_selected_work, home_show_more_work, home_show_approach,
+--   home_approach_kicker, home_approach_title, home_approach_body,
+--   home_approach_image_url, home_approach_cta_label, home_approach_cta_href,
+--   home_more_work_mode, home_more_work_count, home_more_work_manual_project_ids,
+--   updated_at
+
+-- Minimal shell if an environment never ran the initial create (partial DBs).
+create table if not exists public.site_landing_settings (
+  id text primary key default 'default'
+);
+
+insert into public.site_landing_settings (id)
+values ('default')
+on conflict (id) do nothing;
+
+alter table public.site_landing_settings
+  add column if not exists hero_title text not null default '',
+  add column if not exists hero_subtitle text not null default '',
+  add column if not exists hero_image_urls jsonb not null default '[]'::jsonb,
+  add column if not exists hero_link_1_label text,
+  add column if not exists hero_link_1_href text,
+  add column if not exists hero_link_2_label text,
+  add column if not exists hero_link_2_href text,
+  add column if not exists featured_project_ids jsonb not null default '[]'::jsonb,
+  add column if not exists updated_at timestamptz not null default now(),
+  add column if not exists hero_interval_seconds integer not null default 8,
+  add column if not exists home_selected_work_label text,
+  add column if not exists home_more_work_label text,
+  add column if not exists home_show_selected_work boolean not null default true,
+  add column if not exists home_show_more_work boolean not null default true,
+  add column if not exists home_show_approach boolean not null default true,
+  add column if not exists home_approach_kicker text,
+  add column if not exists home_approach_title text,
+  add column if not exists home_approach_body text,
+  add column if not exists home_approach_image_url text,
+  add column if not exists home_approach_cta_label text,
+  add column if not exists home_approach_cta_href text,
+  add column if not exists home_more_work_mode text not null default 'auto',
+  add column if not exists home_more_work_count integer not null default 6,
+  add column if not exists home_more_work_manual_project_ids jsonb not null default '[]'::jsonb;

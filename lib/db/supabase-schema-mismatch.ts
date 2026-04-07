@@ -19,30 +19,36 @@ export function extractPostgrestCodeFromMessage(message: string): string | undef
 /**
  * Returns true for known “missing column / relation / schema cache” patterns.
  * Keep this conservative: unknown errors should not match.
+ *
+ * Do not treat arbitrary substrings (“schema cache” + “column”) as schema drift — that can
+ * misclassify unrelated failures. Prefer PostgREST `PGRST204`, Postgres `42703`, and the
+ * canonical “… in the schema cache” wording.
  */
 export function isMissingDbSchemaColumnError(message: string, code?: string): boolean {
   const m = message.toLowerCase();
-  if (code === "PGRST204") {
+  const postgrestFromMessage = extractPostgrestCodeFromMessage(message);
+  if (code === "PGRST204" || postgrestFromMessage === "PGRST204") {
     return true;
   }
-  if (m.includes("pgrst204")) {
+  // PostgREST missing column, e.g. "Could not find the '…' column of '…' in the schema cache"
+  if (
+    m.includes("could not find") &&
+    m.includes("in the schema cache") &&
+    (m.includes("column") || m.includes("field"))
+  ) {
     return true;
   }
-  if (m.includes("schema cache") && (m.includes("column") || m.includes("field"))) {
+  // SQLSTATE 42703 undefined_column (when exposed on the error object)
+  if (code === "42703") {
     return true;
   }
   if (/\bcolumn\b[\s\S]*\bdoes not exist\b/i.test(message)) {
     return true;
   }
+  // Undefined table: only when the missing relation is clearly `site_landing_settings` (avoid
+  // matching unrelated "relation … does not exist" from FK/trigger chains).
   if (/\brelation\b[\s\S]*\bdoes not exist\b/i.test(message)) {
-    return true;
-  }
-  if (
-    m.includes("could not find") &&
-    m.includes("column") &&
-    (m.includes("site_landing_settings") || m.includes("schema cache"))
-  ) {
-    return true;
+    return m.includes("site_landing_settings");
   }
   return false;
 }

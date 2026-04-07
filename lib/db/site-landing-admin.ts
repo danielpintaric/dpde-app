@@ -4,6 +4,12 @@ import { createSupabaseServerClient } from "@/lib/db/supabase-server";
 import { supabaseReadError } from "@/lib/db/supabase-read-error";
 import type { SiteLandingSettingsRow } from "@/types/site-landing";
 
+/**
+ * Single-row landing settings. Every column written in `upsertSiteLandingSettings` must exist in
+ * `public.site_landing_settings` (Supabase/PostgREST); otherwise upserts fail with PGRST204 / schema cache errors.
+ * Canonical column set: `supabase/migrations/20260413120000_site_landing_settings_upsert_full_sync.sql`
+ * (idempotent `add column if not exists`), plus earlier migrations that introduced the table.
+ */
 const ROW_ID = "default";
 
 export async function getSiteLandingSettingsForAdmin(): Promise<SiteLandingSettingsRow | null> {
@@ -21,6 +27,7 @@ export async function getSiteLandingSettingsForAdmin(): Promise<SiteLandingSetti
   return data as SiteLandingSettingsRow | null;
 }
 
+/** Fields persisted by `upsertSiteLandingSettings` — keep aligned with DB columns (see file header). */
 export type SiteLandingUpsertPayload = {
   hero_title: string;
   hero_subtitle: string;
