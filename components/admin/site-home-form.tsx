@@ -9,10 +9,17 @@ import {
   useMemo,
   useRef,
   useState,
+  type RefObject,
 } from "react";
 import { saveSiteHomeAction, type SiteHomeSaveState } from "@/lib/actions/admin-site-home-actions";
-import { editorSaveButtonPrimaryClass } from "@/components/admin/editor-save-button-styles";
+import { AdminSaveBar } from "@/components/admin/admin-save-bar";
+import { AdminSection } from "@/components/admin/admin-section";
 import { serializeFormSnapshot } from "@/lib/admin/site-home-form-snapshot";
+import { useSiteSettingsScrollSpy } from "@/lib/admin/site-settings-scroll-spy";
+import { SITE_SECTIONS } from "@/lib/admin/site-sections";
+import { SiteSettingsContextPanel } from "@/components/admin/site-settings-context-panel";
+import { SiteSettingsSectionIntro } from "@/components/admin/site-settings-section-intro";
+import { SiteSettingsMobileNav } from "@/components/admin/site-settings-mobile-nav";
 import { SiteHeroImageSlots } from "@/components/admin/site-hero-image-slots";
 import {
   LANDING_HERO_INTERVAL_MAX_SECONDS,
@@ -25,161 +32,44 @@ import type { Project } from "@/types/project";
 
 const labelClass = "mb-1 block text-[11px] font-medium uppercase tracking-wider text-zinc-500";
 const fieldClass =
-  "w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none";
-const sectionTitle =
-  "mb-1 border-b border-zinc-800/80 pb-2 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-500";
-const sectionIntro = "mb-5 max-w-prose text-[12px] leading-relaxed text-zinc-500";
-const panelClass =
-  "rounded-xl border border-zinc-800/60 bg-zinc-950/50 p-5 shadow-md shadow-black/15 ring-1 ring-zinc-800/35 sm:p-6";
-/** Offset for anchor scroll so section titles clear the sticky admin header (h-14 / sm:h-16) + safe area. */
-const sectionScrollClass =
-  "scroll-mt-[calc(env(safe-area-inset-top,0px)+3.5rem+0.5rem)] sm:scroll-mt-[calc(env(safe-area-inset-top,0px)+4rem+0.5rem)]";
-const sectionPanelClass = `${panelClass} ${sectionScrollClass}`;
-const formMainClass =
-  "mx-auto flex w-full max-w-5xl flex-col space-y-10 px-4 pb-32 sm:px-6 lg:space-y-12";
+  "w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none";
+const subsectionHeadingClass = "text-sm text-zinc-400";
+const formLayoutClass =
+  "mx-auto grid w-full max-w-[min(100%,100rem)] grid-cols-1 gap-8 px-4 pb-8 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[220px_minmax(0,1fr)_400px]";
+const formCenterClass = "mx-auto w-full min-w-0 max-w-5xl";
 
 type ProjectOption = Pick<Project, "id" | "title" | "slug">;
 
 const siteAdminNavLinkClass =
-  "shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium outline-none transition-colors hover:bg-white/5 hover:text-zinc-300 focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950";
+  "block rounded-r-md py-1.5 pl-3 text-[13px] font-medium outline-none transition-[color,background-color,border-color] duration-200 focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950";
 
-const siteAdminNavLinkInactiveClass = `${siteAdminNavLinkClass} border-b border-transparent text-zinc-500`;
-const siteAdminNavLinkActiveClass = `${siteAdminNavLinkClass} border-b border-zinc-500/45 text-zinc-200`;
+const siteAdminNavLinkInactiveClass = `${siteAdminNavLinkClass} border-l-2 border-transparent text-zinc-500 hover:bg-white/[0.04] hover:text-zinc-300`;
+const siteAdminNavLinkActiveClass = `${siteAdminNavLinkClass} border-l-2 border-zinc-400 bg-white/[0.06] text-zinc-200`;
 
-/** Section ids for `/admin/site` jump nav + scroll-spy (order = document order). */
-const ADMIN_SITE_NAV_SECTION_IDS: readonly string[] = [
-  "admin-site-brand",
-  "admin-site-navigation",
-  "admin-site-header-cta",
-  "admin-site-contact",
-  "admin-site-footer",
-  "admin-site-hero",
-  "admin-site-homepage",
-  "admin-site-home-curation",
-];
-
-function pickAdminSiteActiveSectionId(navEl: HTMLElement | null): string {
-  const lineY =
-    navEl != null
-      ? navEl.getBoundingClientRect().bottom + 4
-      : typeof window !== "undefined"
-        ? Math.min(168, window.innerHeight * 0.22)
-        : 140;
-
-  const lastId = ADMIN_SITE_NAV_SECTION_IDS[ADMIN_SITE_NAV_SECTION_IDS.length - 1]!;
-  const lastSection = document.getElementById(lastId);
-  if (
-    lastSection &&
-    typeof window !== "undefined" &&
-    window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4
-  ) {
-    return lastId;
-  }
-
-  let active = ADMIN_SITE_NAV_SECTION_IDS[0]!;
-  for (const id of ADMIN_SITE_NAV_SECTION_IDS) {
-    const el = document.getElementById(id);
-    if (!el) {
-      continue;
-    }
-    const top = el.getBoundingClientRect().top;
-    if (top <= lineY + 1) {
-      active = id;
-    }
-  }
-  return active;
-}
-
-/** In-page jump links for the long `/admin/site` form (anchors on sections below). */
-function SiteAdminInPageNav() {
-  const navRef = useRef<HTMLElement | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const [activeId, setActiveId] = useState<string | null>(ADMIN_SITE_NAV_SECTION_IDS[0] ?? null);
-
+/** Desktop (lg+): sticky left sidebar — active state from `useSiteSettingsScrollSpy`. */
+function SiteSettingsSidebar({
+  activeSectionId,
+  navRef,
+}: {
+  activeSectionId: string | null;
+  navRef: RefObject<HTMLElement | null>;
+}) {
   const items = useMemo(
-    () =>
-      [
-        { href: "#admin-site-brand", label: "Brand" },
-        { href: "#admin-site-navigation", label: "Navigation" },
-        { href: "#admin-site-header-cta", label: "Header CTA" },
-        { href: "#admin-site-contact", label: "Contact" },
-        { href: "#admin-site-footer", label: "Footer" },
-        { href: "#admin-site-hero", label: "Hero" },
-        { href: "#admin-site-homepage", label: "Homepage content" },
-        { href: "#admin-site-home-curation", label: "Home curation" },
-      ] as const,
+    () => SITE_SECTIONS.map((s) => ({ href: `#${s.id}`, label: s.label })),
     [],
   );
-
-  const scheduleUpdate = useCallback(() => {
-    if (rafRef.current != null) {
-      return;
-    }
-    rafRef.current = window.requestAnimationFrame(() => {
-      rafRef.current = null;
-      const next = pickAdminSiteActiveSectionId(navRef.current);
-      setActiveId((prev) => (prev === next ? prev : next));
-    });
-  }, []);
-
-  useLayoutEffect(() => {
-    scheduleUpdate();
-    let inner: number | null = null;
-    const outer = window.requestAnimationFrame(() => {
-      inner = window.requestAnimationFrame(scheduleUpdate);
-    });
-    return () => {
-      cancelAnimationFrame(outer);
-      if (inner != null) {
-        cancelAnimationFrame(inner);
-      }
-    };
-  }, [scheduleUpdate]);
-
-  useEffect(() => {
-    const thresholds = [0, 0.05, 0.15, 0.35, 0.55, 0.75, 1];
-    const observer = new IntersectionObserver(scheduleUpdate, {
-      root: null,
-      rootMargin: "-96px 0px -52% 0px",
-      threshold: thresholds,
-    });
-
-    for (const id of ADMIN_SITE_NAV_SECTION_IDS) {
-      const el = document.getElementById(id);
-      if (el) {
-        observer.observe(el);
-      }
-    }
-
-    window.addEventListener("scroll", scheduleUpdate, { passive: true });
-    window.addEventListener("resize", scheduleUpdate);
-    window.addEventListener("hashchange", scheduleUpdate);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("scroll", scheduleUpdate);
-      window.removeEventListener("resize", scheduleUpdate);
-      window.removeEventListener("hashchange", scheduleUpdate);
-      if (rafRef.current != null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-    };
-  }, [scheduleUpdate]);
 
   return (
     <nav
       ref={navRef}
-      className="sticky top-14 z-30 -mx-4 mb-6 border-b border-zinc-800/50 bg-zinc-950/90 px-4 py-2.5 backdrop-blur-sm sm:-mx-6 sm:top-16 sm:mb-8 sm:px-6"
+      className="hidden lg:sticky lg:top-24 lg:z-20 lg:block lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:self-start"
       aria-label="Sections on this page"
     >
-      <p className="mb-2 font-mono text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-600">
-        Jump to
-      </p>
-      <div className="flex flex-wrap gap-x-2 gap-y-1.5">
+      <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">Sections</p>
+      <div className="flex flex-col gap-0.5">
         {items.map(({ href, label }) => {
           const id = href.slice(1);
-          const isActive = activeId === id;
+          const isActive = activeSectionId === id;
           return (
             <a
               key={href}
@@ -204,6 +94,7 @@ function SiteHomeSelectedWorkFields({
   onSupport1Change,
   onSupport2Change,
   projects,
+  hideTitle,
 }: {
   lead: string;
   support1: string;
@@ -212,6 +103,7 @@ function SiteHomeSelectedWorkFields({
   onSupport1Change: (v: string) => void;
   onSupport2Change: (v: string) => void;
   projects: ProjectOption[];
+  hideTitle?: boolean;
 }) {
   const sorted = projects.slice().sort((a, b) => a.title.localeCompare(b.title));
 
@@ -238,7 +130,7 @@ function SiteHomeSelectedWorkFields({
 
   return (
     <div>
-      <span className={`${labelClass} mb-3 block`}>Selected work</span>
+      {hideTitle ? null : <span className={`${labelClass} mb-3 block`}>Selected work</span>}
       <p className="mb-4 text-[12px] leading-relaxed text-zinc-500">
         Lead plus two support tiles define the &ldquo;Selected work&rdquo; block. Empty slots are filled
         automatically on the public site. Applies when the portfolio is served from Supabase and{" "}
@@ -277,11 +169,15 @@ function SiteHomeMoreWorkFields({
   initial,
   projects,
   excludedProjectIds,
+  resetNonce = 0,
+  embedded,
 }: {
   initial: AdminSiteFormValues;
   projects: ProjectOption[];
   /** Project IDs used in Selected work — hidden from manual More work picks to avoid duplicates. */
   excludedProjectIds: string[];
+  resetNonce?: number;
+  embedded?: boolean;
 }) {
   const sorted = projects.slice().sort((a, b) => a.title.localeCompare(b.title));
   const excluded = new Set(excludedProjectIds);
@@ -302,14 +198,15 @@ function SiteHomeMoreWorkFields({
     setCount(initial.homeMoreWorkCount);
     setManualSlots([...initial.homeMoreWorkManualProjectIds]);
   }, [
+    resetNonce,
     initial.homeMoreWorkMode,
     initial.homeMoreWorkCount,
     initial.homeMoreWorkManualProjectIds.join("\u0000"),
   ]);
 
   return (
-    <div className="border-t border-zinc-800/70 pt-4">
-      <span className={`${labelClass} mb-3 block`}>More work</span>
+    <div className={embedded ? "" : "border-t border-zinc-800/70 pt-4"}>
+      {embedded ? null : <span className={`${labelClass} mb-3 block`}>More work</span>}
       <p className="mb-4 text-[12px] leading-relaxed text-zinc-500">
         <strong className="font-medium text-zinc-400">Automatic</strong> shows the newest public projects
         (by creation date), excluding Selected work. <strong className="font-medium text-zinc-400">Manual</strong>{" "}
@@ -485,111 +382,108 @@ function NavRow({
   );
 }
 
-function SiteGlobalSettingsSections({ initial }: { initial: AdminSiteFormValues }) {
+function SiteBrandFields({ initial }: { initial: AdminSiteFormValues }) {
   return (
-    <>
-      <section
-        id="admin-site-brand"
-        className={sectionPanelClass}
-        aria-labelledby="site-brand-heading"
-      >
-        <h2 id="site-brand-heading" className={sectionTitle}>
-          Brand
-        </h2>
-        <p className={sectionIntro}>Public name, wordmark, logo, and copyright.</p>
-        <div className="flex flex-col gap-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="global_brand_name" className={labelClass}>
-                Brand name
-              </label>
-              <input
-                id="global_brand_name"
-                name="global_brand_name"
-                className={fieldClass}
-                defaultValue={initial.brandName}
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label htmlFor="global_wordmark_text" className={labelClass}>
-                Wordmark (header text, optional)
-              </label>
-              <input
-                id="global_wordmark_text"
-                name="global_wordmark_text"
-                className={fieldClass}
-                defaultValue={initial.wordmarkText}
-                placeholder="Leave empty to use brand name"
-                autoComplete="off"
-              />
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Identity</h4>
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label htmlFor="global_logo_image_url" className={labelClass}>
-              Logo image URL (optional)
+            <label htmlFor="global_brand_name" className={labelClass}>
+              Brand name
             </label>
             <input
-              id="global_logo_image_url"
-              name="global_logo_image_url"
+              id="global_brand_name"
+              name="global_brand_name"
               className={fieldClass}
-              defaultValue={initial.logoImageUrl}
-              placeholder="https://…"
+              defaultValue={initial.brandName}
               autoComplete="off"
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="global_logo_home_href" className={labelClass}>
-                Logo link target
-              </label>
-              <input
-                id="global_logo_home_href"
-                name="global_logo_home_href"
-                className={fieldClass}
-                defaultValue={initial.logoHomeHref}
-                placeholder="/"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label htmlFor="global_header_brand_label" className={labelClass}>
-                Short brand label (optional, reserved)
-              </label>
-              <input
-                id="global_header_brand_label"
-                name="global_header_brand_label"
-                className={fieldClass}
-                defaultValue={initial.headerBrandLabel}
-                autoComplete="off"
-              />
-            </div>
-          </div>
           <div>
-            <label htmlFor="global_copyright_holder" className={labelClass}>
-              Copyright name (optional)
+            <label htmlFor="global_wordmark_text" className={labelClass}>
+              Wordmark (header text, optional)
             </label>
             <input
-              id="global_copyright_holder"
-              name="global_copyright_holder"
+              id="global_wordmark_text"
+              name="global_wordmark_text"
               className={fieldClass}
-              defaultValue={initial.copyrightHolder}
+              defaultValue={initial.wordmarkText}
               placeholder="Leave empty to use brand name"
               autoComplete="off"
             />
           </div>
         </div>
-      </section>
+      </div>
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Logo</h4>
+        <div>
+          <label htmlFor="global_logo_image_url" className={labelClass}>
+            Logo image URL (optional)
+          </label>
+          <input
+            id="global_logo_image_url"
+            name="global_logo_image_url"
+            className={fieldClass}
+            defaultValue={initial.logoImageUrl}
+            placeholder="https://…"
+            autoComplete="off"
+          />
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="global_logo_home_href" className={labelClass}>
+              Logo link target
+            </label>
+            <input
+              id="global_logo_home_href"
+              name="global_logo_home_href"
+              className={fieldClass}
+              defaultValue={initial.logoHomeHref}
+              placeholder="/"
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label htmlFor="global_header_brand_label" className={labelClass}>
+              Short brand label (optional, reserved)
+            </label>
+            <input
+              id="global_header_brand_label"
+              name="global_header_brand_label"
+              className={fieldClass}
+              defaultValue={initial.headerBrandLabel}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Copyright</h4>
+        <div>
+          <label htmlFor="global_copyright_holder" className={labelClass}>
+            Copyright name (optional)
+          </label>
+          <input
+            id="global_copyright_holder"
+            name="global_copyright_holder"
+            className={fieldClass}
+            defaultValue={initial.copyrightHolder}
+            placeholder="Leave empty to use brand name"
+            autoComplete="off"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
-      <section
-        id="admin-site-navigation"
-        className={sectionPanelClass}
-        aria-labelledby="site-nav-heading"
-      >
-        <h2 id="site-nav-heading" className={sectionTitle}>
-          Navigation
-        </h2>
-        <p className={sectionIntro}>
+function SiteNavigationFields({ initial }: { initial: AdminSiteFormValues }) {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Header links</h4>
+        <p className="text-[12px] leading-relaxed text-zinc-500">
           Manage header links and visibility. At least one row with label and URL is required.
         </p>
         <div className="flex flex-col gap-3">
@@ -598,18 +492,13 @@ function SiteGlobalSettingsSections({ initial }: { initial: AdminSiteFormValues 
           <NavRow slot={3} initial={initial} />
           <NavRow slot={4} initial={initial} />
         </div>
-      </section>
-
-      <section
-        id="admin-site-header-cta"
-        className={sectionPanelClass}
-        aria-labelledby="site-header-cta-heading"
-      >
-        <h2 id="site-header-cta-heading" className={sectionTitle}>
-          Header CTA (optional)
-        </h2>
-        <p className={sectionIntro}>Optional extra link beside the main navigation.</p>
-        <div className="grid gap-4 sm:grid-cols-2">
+      </div>
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Header CTA</h4>
+        <p className="text-[12px] leading-relaxed text-zinc-500">
+          Optional extra link beside the main navigation.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="global_header_cta_label" className={labelClass}>
               Label
@@ -636,217 +525,214 @@ function SiteGlobalSettingsSections({ initial }: { initial: AdminSiteFormValues 
             />
           </div>
         </div>
-      </section>
-
-      <section
-        id="admin-site-contact"
-        className={sectionPanelClass}
-        aria-labelledby="site-contact-heading"
-      >
-        <h2 id="site-contact-heading" className={sectionTitle}>
-          Contact
-        </h2>
-        <p className={sectionIntro}>Email, phone, Instagram, and location shown on the site.</p>
-        <div className="flex flex-col gap-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="global_footer_email" className={labelClass}>
-                Primary email
-              </label>
-              <input
-                id="global_footer_email"
-                name="global_footer_email"
-                type="email"
-                className={fieldClass}
-                defaultValue={initial.footerEmail}
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label htmlFor="global_contact_phone" className={labelClass}>
-                Phone (optional)
-              </label>
-              <input
-                id="global_contact_phone"
-                name="global_contact_phone"
-                className={fieldClass}
-                defaultValue={initial.contactPhone}
-                placeholder="+49 …"
-                autoComplete="off"
-              />
-            </div>
-          </div>
-          <div>
-            <label htmlFor="global_primary_contact_label" className={labelClass}>
-              Email link label (optional)
-            </label>
-            <input
-              id="global_primary_contact_label"
-              name="global_primary_contact_label"
-              className={fieldClass}
-              defaultValue={initial.primaryContactLabel}
-              placeholder="Defaults to email address"
-              autoComplete="off"
-            />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="global_footer_instagram_url" className={labelClass}>
-                Instagram URL
-              </label>
-              <input
-                id="global_footer_instagram_url"
-                name="global_footer_instagram_url"
-                className={fieldClass}
-                defaultValue={initial.footerInstagramUrl}
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label htmlFor="global_footer_instagram_label" className={labelClass}>
-                Instagram label
-              </label>
-              <input
-                id="global_footer_instagram_label"
-                name="global_footer_instagram_label"
-                className={fieldClass}
-                defaultValue={initial.footerInstagramLabel}
-                autoComplete="off"
-              />
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="global_location_city" className={labelClass}>
-                Location / city (optional)
-              </label>
-              <input
-                id="global_location_city"
-                name="global_location_city"
-                className={fieldClass}
-                defaultValue={initial.locationCity}
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label htmlFor="global_bio_line" className={labelClass}>
-                Short bio line (optional, metadata)
-              </label>
-              <input
-                id="global_bio_line"
-                name="global_bio_line"
-                className={fieldClass}
-                defaultValue={initial.bioLine}
-                autoComplete="off"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section
-        id="admin-site-footer"
-        className={sectionPanelClass}
-        aria-labelledby="site-footer-heading"
-      >
-        <h2 id="site-footer-heading" className={sectionTitle}>
-          Footer
-        </h2>
-        <p className={sectionIntro}>Tagline, primary CTA, and secondary links in the footer.</p>
-        <div className="flex flex-col gap-4">
-          <div>
-            <label htmlFor="global_footer_tagline" className={labelClass}>
-              Footer description
-            </label>
-            <textarea
-              id="global_footer_tagline"
-              name="global_footer_tagline"
-              rows={3}
-              className={`${fieldClass} resize-y`}
-              defaultValue={initial.footerTagline}
-            />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="global_footer_cta_href" className={labelClass}>
-                Footer CTA link
-              </label>
-              <input
-                id="global_footer_cta_href"
-                name="global_footer_cta_href"
-                className={fieldClass}
-                defaultValue={initial.footerCtaHref}
-                placeholder="/contact"
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label htmlFor="global_footer_cta_label" className={labelClass}>
-                Footer CTA label
-              </label>
-              <input
-                id="global_footer_cta_label"
-                name="global_footer_cta_label"
-                className={fieldClass}
-                defaultValue={initial.footerCtaLabel}
-                autoComplete="off"
-              />
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="global_footer_extra_url" className={labelClass}>
-                Secondary link URL (optional)
-              </label>
-              <input
-                id="global_footer_extra_url"
-                name="global_footer_extra_url"
-                className={fieldClass}
-                defaultValue={initial.footerExtraUrl}
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label htmlFor="global_footer_extra_label" className={labelClass}>
-                Secondary link label
-              </label>
-              <input
-                id="global_footer_extra_label"
-                name="global_footer_extra_label"
-                className={fieldClass}
-                defaultValue={initial.footerExtraLabel}
-                autoComplete="off"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-    </>
+      </div>
+    </div>
   );
 }
 
-function SiteHomeHeroSection({
+function SiteContactFields({ initial }: { initial: AdminSiteFormValues }) {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Channels</h4>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="global_footer_email" className={labelClass}>
+              Primary email
+            </label>
+            <input
+              id="global_footer_email"
+              name="global_footer_email"
+              type="email"
+              className={fieldClass}
+              defaultValue={initial.footerEmail}
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label htmlFor="global_contact_phone" className={labelClass}>
+              Phone (optional)
+            </label>
+            <input
+              id="global_contact_phone"
+              name="global_contact_phone"
+              className={fieldClass}
+              defaultValue={initial.contactPhone}
+              placeholder="+49 …"
+              autoComplete="off"
+            />
+          </div>
+        </div>
+        <div>
+          <label htmlFor="global_primary_contact_label" className={labelClass}>
+            Email link label (optional)
+          </label>
+          <input
+            id="global_primary_contact_label"
+            name="global_primary_contact_label"
+            className={fieldClass}
+            defaultValue={initial.primaryContactLabel}
+            placeholder="Defaults to email address"
+            autoComplete="off"
+          />
+        </div>
+      </div>
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Social</h4>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="global_footer_instagram_url" className={labelClass}>
+              Instagram URL
+            </label>
+            <input
+              id="global_footer_instagram_url"
+              name="global_footer_instagram_url"
+              className={fieldClass}
+              defaultValue={initial.footerInstagramUrl}
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label htmlFor="global_footer_instagram_label" className={labelClass}>
+              Instagram label
+            </label>
+            <input
+              id="global_footer_instagram_label"
+              name="global_footer_instagram_label"
+              className={fieldClass}
+              defaultValue={initial.footerInstagramLabel}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Location & meta</h4>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="global_location_city" className={labelClass}>
+              Location / city (optional)
+            </label>
+            <input
+              id="global_location_city"
+              name="global_location_city"
+              className={fieldClass}
+              defaultValue={initial.locationCity}
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label htmlFor="global_bio_line" className={labelClass}>
+              Short bio line (optional, metadata)
+            </label>
+            <input
+              id="global_bio_line"
+              name="global_bio_line"
+              className={fieldClass}
+              defaultValue={initial.bioLine}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SiteFooterFields({ initial }: { initial: AdminSiteFormValues }) {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Copy</h4>
+        <div>
+          <label htmlFor="global_footer_tagline" className={labelClass}>
+            Footer description
+          </label>
+          <textarea
+            id="global_footer_tagline"
+            name="global_footer_tagline"
+            rows={3}
+            className={`${fieldClass} resize-y`}
+            defaultValue={initial.footerTagline}
+          />
+        </div>
+      </div>
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Primary CTA</h4>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="global_footer_cta_href" className={labelClass}>
+              Footer CTA link
+            </label>
+            <input
+              id="global_footer_cta_href"
+              name="global_footer_cta_href"
+              className={fieldClass}
+              defaultValue={initial.footerCtaHref}
+              placeholder="/contact"
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label htmlFor="global_footer_cta_label" className={labelClass}>
+              Footer CTA label
+            </label>
+            <input
+              id="global_footer_cta_label"
+              name="global_footer_cta_label"
+              className={fieldClass}
+              defaultValue={initial.footerCtaLabel}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Secondary link</h4>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="global_footer_extra_url" className={labelClass}>
+              Secondary link URL (optional)
+            </label>
+            <input
+              id="global_footer_extra_url"
+              name="global_footer_extra_url"
+              className={fieldClass}
+              defaultValue={initial.footerExtraUrl}
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label htmlFor="global_footer_extra_label" className={labelClass}>
+              Secondary link label
+            </label>
+            <input
+              id="global_footer_extra_label"
+              name="global_footer_extra_label"
+              className={fieldClass}
+              defaultValue={initial.footerExtraLabel}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SiteHeroFields({
   initial,
   onHeroUrlsChange,
+  heroSlotsKey,
 }: {
   initial: SiteHomeFormValues;
   onHeroUrlsChange?: () => void;
+  heroSlotsKey: string;
 }) {
   return (
-    <section
-      id="admin-site-hero"
-      className={sectionPanelClass}
-      aria-labelledby="site-home-hero-heading"
-    >
-      <h2 id="site-home-hero-heading" className={sectionTitle}>
-        Hero
-      </h2>
-      <p className={sectionIntro}>
-        Homepage headline, slideshow, and links. Empty title or subtitle falls back to defaults; leave all
-        image slots empty to use the built-in hero image after save.
-      </p>
-
-      <div className="flex flex-col gap-4">
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Content</h4>
         <div>
           <label htmlFor="hero_title" className={labelClass}>
             Hero title
@@ -859,7 +745,6 @@ function SiteHomeHeroSection({
             autoComplete="off"
           />
         </div>
-
         <div>
           <label htmlFor="hero_subtitle" className={labelClass}>
             Hero subtitle
@@ -872,24 +757,27 @@ function SiteHomeHeroSection({
             defaultValue={initial.heroSubtitle}
           />
         </div>
+      </div>
 
-        <div className="flex flex-col gap-3">
-          <span className={labelClass}>Hero images</span>
-          <p className="text-[11px] leading-relaxed text-zinc-600">
-            Up to four images (first = initial slide). Uploaded files go to{" "}
-            <span className="font-mono text-zinc-500">site/hero/slot-*</span> in the project storage bucket —
-            isolated from portfolio folders. Empty slots are ignored when saving.
-          </p>
-          <SiteHeroImageSlots
-            key={`${initial.heroImage1}\u0001${initial.heroImage2}\u0001${initial.heroImage3}\u0001${initial.heroImage4}`}
-            initial1={initial.heroImage1}
-            initial2={initial.heroImage2}
-            initial3={initial.heroImage3}
-            initial4={initial.heroImage4}
-            onUrlsChange={onHeroUrlsChange}
-          />
-        </div>
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Images</h4>
+        <p className="text-[11px] leading-relaxed text-zinc-600">
+          Up to four images (first = initial slide). Uploaded files go to{" "}
+          <span className="font-mono text-zinc-500">site/hero/slot-*</span> in the project storage bucket —
+          isolated from portfolio folders. Empty slots are ignored when saving.
+        </p>
+        <SiteHeroImageSlots
+          key={heroSlotsKey}
+          initial1={initial.heroImage1}
+          initial2={initial.heroImage2}
+          initial3={initial.heroImage3}
+          initial4={initial.heroImage4}
+          onUrlsChange={onHeroUrlsChange}
+        />
+      </div>
 
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Slideshow</h4>
         <div>
           <label htmlFor="hero_interval_seconds" className={labelClass}>
             Hero interval
@@ -908,8 +796,11 @@ function SiteHomeHeroSection({
             Time between hero image transitions in seconds.
           </p>
         </div>
+      </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>CTA</h4>
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="hero_link_1_label" className={labelClass}>
               Link 1 label
@@ -955,22 +846,23 @@ function SiteHomeHeroSection({
             />
           </div>
         </div>
-
         <p className="text-[11px] leading-relaxed text-zinc-600">
-          For each link, set both label and href — or leave both empty to use the default pair on the
-          public site.
+          For each link, set both label and href — or leave both empty to use the default pair on the public
+          site.
         </p>
       </div>
-    </section>
+    </div>
   );
 }
 
-function SiteHomepageContentSection({
+function SiteFeaturedSection({
   initial,
   projects,
+  resetNonce,
 }: {
   initial: AdminSiteFormValues;
   projects: ProjectOption[];
+  resetNonce: number;
 }) {
   const [lead, setLead] = useState(initial.featuredProjectId1);
   const [support1, setSupport1] = useState(initial.featuredProjectId2);
@@ -980,28 +872,50 @@ function SiteHomepageContentSection({
     setLead(initial.featuredProjectId1);
     setSupport1(initial.featuredProjectId2);
     setSupport2(initial.featuredProjectId3);
-  }, [initial.featuredProjectId1, initial.featuredProjectId2, initial.featuredProjectId3]);
+  }, [
+    resetNonce,
+    initial.featuredProjectId1,
+    initial.featuredProjectId2,
+    initial.featuredProjectId3,
+  ]);
 
-  const excludedForMoreWork = [lead, support1, support2]
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const excludedForMoreWork = [lead, support1, support2].map((s) => s.trim()).filter(Boolean);
 
   return (
-    <section
-      id="admin-site-homepage"
-      className={sectionPanelClass}
-      aria-labelledby="site-homepage-content-heading"
-    >
-      <h2 id="site-homepage-content-heading" className={sectionTitle}>
-        Homepage content
-      </h2>
-      <p className={sectionIntro}>
-        Section labels, approach content, and visibility. Curate Selected work and More work in the block
-        below. Hero copy lives in the Hero section above.
-      </p>
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Selected work</h4>
+        <SiteHomeSelectedWorkFields
+          hideTitle
+          lead={lead}
+          support1={support1}
+          support2={support2}
+          onLeadChange={setLead}
+          onSupport1Change={setSupport1}
+          onSupport2Change={setSupport2}
+          projects={projects}
+        />
+      </div>
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>More work</h4>
+        <SiteHomeMoreWorkFields
+          embedded
+          resetNonce={resetNonce}
+          initial={initial}
+          projects={projects}
+          excludedProjectIds={excludedForMoreWork}
+        />
+      </div>
+    </div>
+  );
+}
 
-      <div className="flex flex-col gap-6">
-        <div className="grid gap-4 sm:grid-cols-2">
+function SiteAboutFields({ initial }: { initial: AdminSiteFormValues }) {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Section labels</h4>
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="home_selected_work_label" className={labelClass}>
               Selected work — section label
@@ -1027,162 +941,134 @@ function SiteHomepageContentSection({
             />
           </div>
         </div>
+      </div>
 
-        <div>
-          <span className={labelClass}>Section visibility</span>
-          <div className="mt-2 flex flex-col gap-2 text-[12px] text-zinc-400">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                name="home_show_selected_work"
-                value="1"
-                defaultChecked={initial.homeShowSelectedWork}
-                className="rounded border-zinc-600"
-              />
-              Show Selected work
-            </label>
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                name="home_show_more_work"
-                value="1"
-                defaultChecked={initial.homeShowMoreWork}
-                className="rounded border-zinc-600"
-              />
-              Show More work
-            </label>
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                name="home_show_approach"
-                value="1"
-                defaultChecked={initial.homeShowApproach}
-                className="rounded border-zinc-600"
-              />
-              Show Approach
-            </label>
-          </div>
-        </div>
-
-        <div
-          id="admin-site-home-curation"
-          className={`border-t border-zinc-800/70 pt-4 ${sectionScrollClass}`}
-        >
-          <h3 className="mb-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">
-            Home project curation
-          </h3>
-          <p className="mb-5 max-w-prose text-[12px] leading-relaxed text-zinc-500">
-            Choose which projects appear in Selected work and how More work is filled (automatic or manual
-            list). Saving uses the same controls as the rest of this page.
-          </p>
-          <div className="flex flex-col gap-6">
-            <SiteHomeSelectedWorkFields
-              lead={lead}
-              support1={support1}
-              support2={support2}
-              onLeadChange={setLead}
-              onSupport1Change={setSupport1}
-              onSupport2Change={setSupport2}
-              projects={projects}
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Visibility</h4>
+        <div className="flex flex-col gap-2 text-[12px] text-zinc-400">
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              name="home_show_selected_work"
+              value="1"
+              defaultChecked={initial.homeShowSelectedWork}
+              className="rounded border-zinc-600"
             />
-            <SiteHomeMoreWorkFields
-              initial={initial}
-              projects={projects}
-              excludedProjectIds={excludedForMoreWork}
+            Show Selected work
+          </label>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              name="home_show_more_work"
+              value="1"
+              defaultChecked={initial.homeShowMoreWork}
+              className="rounded border-zinc-600"
             />
-          </div>
+            Show More work
+          </label>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              name="home_show_approach"
+              value="1"
+              defaultChecked={initial.homeShowApproach}
+              className="rounded border-zinc-600"
+            />
+            Show Approach
+          </label>
         </div>
+      </div>
 
-        <div className="border-t border-zinc-800/70 pt-4">
-          <span className={`${labelClass} mb-3 block`}>Approach block</span>
-          <div className="flex flex-col gap-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="home_approach_kicker" className={labelClass}>
-                  Kicker (small line above title)
-                </label>
-                <input
-                  id="home_approach_kicker"
-                  name="home_approach_kicker"
-                  className={fieldClass}
-                  defaultValue={initial.homeApproachKicker}
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label htmlFor="home_approach_title" className={labelClass}>
-                  Title
-                </label>
-                <input
-                  id="home_approach_title"
-                  name="home_approach_title"
-                  className={fieldClass}
-                  defaultValue={initial.homeApproachTitle}
-                  autoComplete="off"
-                />
-              </div>
-            </div>
+      <div className="space-y-3">
+        <h4 className={subsectionHeadingClass}>Approach</h4>
+        <div className="flex flex-col gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label htmlFor="home_approach_body" className={labelClass}>
-                Text (line breaks preserved)
-              </label>
-              <textarea
-                id="home_approach_body"
-                name="home_approach_body"
-                rows={6}
-                className={`${fieldClass} resize-y`}
-                defaultValue={initial.homeApproachBody}
-              />
-            </div>
-            <div>
-              <label htmlFor="home_approach_image_url" className={labelClass}>
-                Image URL (optional — empty uses default)
+              <label htmlFor="home_approach_kicker" className={labelClass}>
+                Kicker (small line above title)
               </label>
               <input
-                id="home_approach_image_url"
-                name="home_approach_image_url"
+                id="home_approach_kicker"
+                name="home_approach_kicker"
                 className={fieldClass}
-                defaultValue={initial.homeApproachImageUrl}
-                placeholder="https://…"
+                defaultValue={initial.homeApproachKicker}
                 autoComplete="off"
               />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="home_approach_cta_label" className={labelClass}>
-                  Optional CTA label
-                </label>
-                <input
-                  id="home_approach_cta_label"
-                  name="home_approach_cta_label"
-                  className={fieldClass}
-                  defaultValue={initial.homeApproachCtaLabel}
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label htmlFor="home_approach_cta_href" className={labelClass}>
-                  Optional CTA URL / path
-                </label>
-                <input
-                  id="home_approach_cta_href"
-                  name="home_approach_cta_href"
-                  className={fieldClass}
-                  defaultValue={initial.homeApproachCtaHref}
-                  placeholder="/about"
-                  autoComplete="off"
-                />
-              </div>
+            <div>
+              <label htmlFor="home_approach_title" className={labelClass}>
+                Title
+              </label>
+              <input
+                id="home_approach_title"
+                name="home_approach_title"
+                className={fieldClass}
+                defaultValue={initial.homeApproachTitle}
+                autoComplete="off"
+              />
             </div>
-            <p className="text-[11px] leading-relaxed text-zinc-600">
-              Set both CTA label and URL, or leave both empty to hide the Approach CTA on the public site.
-            </p>
           </div>
+          <div>
+            <label htmlFor="home_approach_body" className={labelClass}>
+              Text (line breaks preserved)
+            </label>
+            <textarea
+              id="home_approach_body"
+              name="home_approach_body"
+              rows={6}
+              className={`${fieldClass} resize-y`}
+              defaultValue={initial.homeApproachBody}
+            />
+          </div>
+          <div>
+            <label htmlFor="home_approach_image_url" className={labelClass}>
+              Image URL (optional — empty uses default)
+            </label>
+            <input
+              id="home_approach_image_url"
+              name="home_approach_image_url"
+              className={fieldClass}
+              defaultValue={initial.homeApproachImageUrl}
+              placeholder="https://…"
+              autoComplete="off"
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="home_approach_cta_label" className={labelClass}>
+                Optional CTA label
+              </label>
+              <input
+                id="home_approach_cta_label"
+                name="home_approach_cta_label"
+                className={fieldClass}
+                defaultValue={initial.homeApproachCtaLabel}
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <label htmlFor="home_approach_cta_href" className={labelClass}>
+                Optional CTA URL / path
+              </label>
+              <input
+                id="home_approach_cta_href"
+                name="home_approach_cta_href"
+                className={fieldClass}
+                defaultValue={initial.homeApproachCtaHref}
+                placeholder="/about"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+          <p className="text-[11px] leading-relaxed text-zinc-600">
+            Set both CTA label and URL, or leave both empty to hide the Approach CTA on the public site.
+          </p>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
+
 
 type Props = {
   initial: AdminSiteFormValues;
@@ -1193,6 +1079,9 @@ export function SiteHomeForm({ initial, projects }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const baselineRef = useRef<string>("");
+  const mobileStickyRef = useRef<HTMLDivElement>(null);
+  const sidebarNavRef = useRef<HTMLElement | null>(null);
+  const { activeSectionId } = useSiteSettingsScrollSpy(mobileStickyRef, sidebarNavRef);
 
   const [state, formAction, pending] = useActionState(
     saveSiteHomeAction,
@@ -1200,7 +1089,7 @@ export function SiteHomeForm({ initial, projects }: Props) {
   );
 
   const [dirty, setDirty] = useState(false);
-  const [savedFlash, setSavedFlash] = useState(false);
+  const [resetNonce, setResetNonce] = useState(0);
 
   const checkDirty = useCallback(() => {
     requestAnimationFrame(() => {
@@ -1211,9 +1100,6 @@ export function SiteHomeForm({ initial, projects }: Props) {
       const snap = serializeFormSnapshot(form);
       const isDirty = snap !== baselineRef.current;
       setDirty(isDirty);
-      if (isDirty) {
-        setSavedFlash(false);
-      }
     });
   }, []);
 
@@ -1239,33 +1125,41 @@ export function SiteHomeForm({ initial, projects }: Props) {
       }
       baselineRef.current = serializeFormSnapshot(formRef.current);
       setDirty(false);
-      setSavedFlash(true);
       void router.refresh();
     });
-    const t = window.setTimeout(() => setSavedFlash(false), 2500);
     return () => {
       cancelAnimationFrame(raf);
-      clearTimeout(t);
     };
   }, [state, router]);
 
+  const heroSlotsKey = useMemo(
+    () =>
+      `${resetNonce}\u0001${initial.heroImage1}\u0001${initial.heroImage2}\u0001${initial.heroImage3}\u0001${initial.heroImage4}`,
+    [resetNonce, initial.heroImage1, initial.heroImage2, initial.heroImage3, initial.heroImage4],
+  );
+
+  const handleReset = useCallback(() => {
+    formRef.current?.reset();
+    setResetNonce((n) => n + 1);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const form = formRef.current;
+        if (!form) {
+          return;
+        }
+        baselineRef.current = serializeFormSnapshot(form);
+        setDirty(false);
+      });
+    });
+  }, []);
+
   const saveDisabled = pending || !dirty;
-  let saveLabel: string;
-  if (pending) {
-    saveLabel = "Saving...";
-  } else if (savedFlash && !dirty) {
-    saveLabel = "Saved";
-  } else if (!dirty) {
-    saveLabel = "No changes";
-  } else {
-    saveLabel = "Save changes";
-  }
+  const saveLabel = pending ? "Saving..." : "Save changes";
 
-  const saveButtonClass = `${editorSaveButtonPrimaryClass} w-full shrink-0 justify-center px-5 py-2.5 text-sm sm:w-auto sm:min-w-[11.5rem] ${
-    saveDisabled && !pending ? "opacity-60" : ""
-  }`;
-
-  const saveBarAriaLive = state?.error ? "assertive" : "polite";
+  const saveBarVisible = dirty || pending || !!state?.error;
+  const bottomPadClass = saveBarVisible
+    ? "pb-[max(5.5rem,env(safe-area-inset-bottom))] sm:pb-28"
+    : "pb-10";
 
   return (
     <form
@@ -1275,56 +1169,82 @@ export function SiteHomeForm({ initial, projects }: Props) {
       onInput={checkDirty}
       onChange={checkDirty}
     >
-      <div className={formMainClass}>
-        <SiteAdminInPageNav />
-
-        <SiteGlobalSettingsSections initial={initial} />
-        <SiteHomeHeroSection initial={initial} onHeroUrlsChange={checkDirty} />
-        <SiteHomepageContentSection initial={initial} projects={projects} />
-      </div>
-
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pt-2 sm:px-4">
+      <div className={`${formLayoutClass} ${bottomPadClass}`}>
         <div
-          className={`pointer-events-auto w-full max-w-5xl border-t border-x border-zinc-800/75 bg-zinc-900/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-8px_32px_rgba(0,0,0,0.38)] backdrop-blur-md supports-[backdrop-filter]:bg-zinc-900/88 sm:rounded-t-xl sm:px-5 sm:pt-3.5 ${
-            state?.error ? "border-red-900/35 sm:border-t-red-900/40" : ""
-          }`}
+          ref={mobileStickyRef}
+          className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-30 col-span-full -mx-4 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md supports-[backdrop-filter]:bg-zinc-950/75 sm:-mx-6 sm:top-[calc(env(safe-area-inset-top,0px)+4rem)] lg:hidden"
         >
-          <div className="flex min-h-[2.75rem] flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5">
-            <div
-              className="min-w-0 flex-1"
-              role={state?.error ? "alert" : "status"}
-              aria-live={saveBarAriaLive}
-              aria-relevant="additions text"
-            >
-              {pending ? (
-                <p className="text-[13px] font-medium leading-snug text-zinc-400">Saving...</p>
-              ) : state?.error ? (
-                <div className="rounded-md border border-red-900/40 bg-red-950/50 px-2.5 py-2 ring-1 ring-inset ring-red-500/10">
-                  <p className="max-h-[4.75rem] overflow-y-auto text-[13px] font-medium leading-snug text-red-100/95 [overflow-wrap:anywhere] [scrollbar-width:thin]">
-                    {state.error}
-                  </p>
-                </div>
-              ) : savedFlash && !dirty ? (
-                <p className="text-[13px] font-medium leading-snug text-emerald-400/95">Settings saved.</p>
-              ) : !dirty ? (
-                <p className="text-[13px] font-medium leading-snug text-zinc-500">No changes</p>
-              ) : (
-                <p className="min-h-[1.25rem] text-[13px] text-transparent" aria-hidden>
-                  {"\u00a0"}
-                </p>
-              )}
-            </div>
-            <button
-              type="submit"
-              className={saveButtonClass}
-              disabled={saveDisabled}
-              aria-busy={pending}
-            >
-              {saveLabel}
-            </button>
-          </div>
+          <SiteSettingsMobileNav sections={SITE_SECTIONS} activeSectionId={activeSectionId} />
         </div>
+        <SiteSettingsSidebar activeSectionId={activeSectionId} navRef={sidebarNavRef} />
+        <div className={formCenterClass}>
+          <SiteSettingsSectionIntro activeSectionId={activeSectionId} />
+          <AdminSection
+            id="site"
+            title="Site"
+            description="Public name, wordmark, logo, and copyright."
+          >
+            <SiteBrandFields initial={initial} />
+          </AdminSection>
+          <AdminSection
+            id="navigation"
+            title="Navigation"
+            description="Header links and the optional CTA beside the main menu."
+          >
+            <SiteNavigationFields initial={initial} />
+          </AdminSection>
+          <AdminSection
+            id="hero"
+            title="Hero"
+            description="Homepage headline, slideshow, and hero links. Empty title or subtitle falls back to defaults; leave all image slots empty to use the built-in hero image after save."
+          >
+            <SiteHeroFields
+              initial={initial}
+              heroSlotsKey={heroSlotsKey}
+              onHeroUrlsChange={checkDirty}
+            />
+          </AdminSection>
+          <AdminSection
+            id="featured"
+            title="Featured Work"
+            description="Curate the Selected work tiles and how the More work grid is filled."
+          >
+            <SiteFeaturedSection initial={initial} projects={projects} resetNonce={resetNonce} />
+          </AdminSection>
+          <AdminSection
+            id="about"
+            title="About"
+            description="Section labels, which blocks appear on the home page, and the Approach content."
+          >
+            <SiteAboutFields initial={initial} />
+          </AdminSection>
+          <AdminSection
+            id="contact"
+            title="Contact"
+            description="Email, phone, Instagram, and location shown on the site."
+          >
+            <SiteContactFields initial={initial} />
+          </AdminSection>
+          <AdminSection
+            id="footer"
+            title="Footer"
+            description="Tagline, primary CTA, and secondary links in the footer."
+          >
+            <SiteFooterFields initial={initial} />
+          </AdminSection>
+        </div>
+        <SiteSettingsContextPanel activeSectionId={activeSectionId} />
       </div>
+
+      <AdminSaveBar
+        visible={saveBarVisible}
+        dirty={dirty}
+        pending={pending}
+        errorMessage={state?.error}
+        saveLabel={saveLabel}
+        saveDisabled={saveDisabled}
+        onReset={handleReset}
+      />
     </form>
   );
 }

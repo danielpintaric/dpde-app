@@ -6,8 +6,18 @@ import { getOptionalSupabaseServiceRoleKey } from "@/lib/db/supabase-server-env"
 import { getVercelDeploymentEnv, isProductionDeploy } from "@/lib/server-deployment";
 import { logServerError } from "@/lib/server-log";
 
+/**
+ * Service-Role — zentrale Fehlertexte (nur diese Datei). Validierung nur in
+ * `createSupabaseServiceRoleClient()`. Produktions-Env wurde gegenüber lokal / Vercel
+ * abgeglichen; die Warnung `service-role-suspicious-length` bleibt für künftige
+ * Konfigurationsfehler. Deploy-Checkliste: docs/supabase-service-role-deployment-verification.md
+ */
+
 const INVALID_SERVICE_ROLE_KEY =
   "SUPABASE_SERVICE_ROLE_KEY is not a valid service_role key for server-side storage operations";
+
+/** Nur Diagnose: typische Supabase-`service_role`-JWTs sind deutlich länger (oft ~219 Zeichen). Kein Block — nur Log. */
+const LEGACY_SUPABASE_SERVICE_ROLE_JWT_MIN_CHARS = 200;
 
 /** Öffentliche Kurztexte für 503 — ohne Secrets; Downloads, Client-Area, Selection-API. */
 export const SERVICE_ROLE_PUBLIC_MESSAGE_MISSING =
@@ -35,18 +45,28 @@ export function isSupabaseServiceRoleConfigurationError(
   return e instanceof SupabaseServiceRoleConfigurationError;
 }
 
-/** Liest `role` aus dem Supabase-JWT ohne Signaturprüfung. */
-function jwtRoleFromSupabaseKey(key: string): string | undefined {
+/** Dekodiert nur den JWT-Payload (Mitte) lokal — keine Signaturprüfung, kein Secret-Log. */
+function parseJwtPayloadFromKey(key: string): {
+  role?: string;
+  iss?: string;
+  ref?: string;
+} | null {
   const parts = key.trim().split(".");
-  if (parts.length !== 3) return undefined;
+  if (parts.length !== 3) return null;
   try {
     let b64 = parts[1].replace(/-/g, "+").replaceAll("_", "/");
     const pad = b64.length % 4;
     if (pad) b64 += "=".repeat(4 - pad);
-    const json = JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as { role?: string };
-    return typeof json.role === "string" ? json.role : undefined;
+    const json = JSON.parse(Buffer.from(b64, "base64").toString("utf8")) as Record<string, unknown>;
+    const role = typeof json.role === "string" ? json.role : undefined;
+    const iss = typeof json.iss === "string" ? json.iss : undefined;
+    const refFromRef = typeof json.ref === "string" ? json.ref : undefined;
+    const refFromProject =
+      typeof json.project_ref === "string" ? json.project_ref : undefined;
+    const ref = refFromRef ?? refFromProject;
+    return { role, iss, ref };
   } catch {
-    return undefined;
+    return null;
   }
 }
 
@@ -109,9 +129,13 @@ export function createSupabaseServiceRoleClient(): SupabaseClient {
   const { url } = getSupabasePublicConfig();
   const key = getOptionalSupabaseServiceRoleKey();
 
-  console.info(
-    `[service-role-check] present=${Boolean(key)} length=${key?.length ?? 0} vercelEnv=${getVercelDeploymentEnv() ?? "n/a"} nodeEnv=${process.env.NODE_ENV ?? "n/a"}`,
-  );
+  if (key && key.length < LEGACY_SUPABASE_SERVICE_ROLE_JWT_MIN_CHARS) {
+    console.warn(
+      `[env-check] service-role-suspicious-length present=true length=${key.length} expected_legacy_jwt_min_chars=${LEGACY_SUPABASE_SERVICE_ROLE_JWT_MIN_CHARS} note=Too short for typical Supabase service_role JWT`,
+    );
+  }
+
+  const parsed = key ? parseJwtPayloadFromKey(key) : null;
 
   if (!key) {
     logInvalidServiceRoleDiagnostics("missing");
@@ -122,7 +146,7 @@ export function createSupabaseServiceRoleClient(): SupabaseClient {
     );
   }
 
-  const jwtRole = jwtRoleFromSupabaseKey(key);
+  const jwtRole = typeof parsed?.role === "string" ? parsed.role : undefined;
 
   if (jwtRole !== "service_role") {
     logInvalidServiceRoleDiagnostics(

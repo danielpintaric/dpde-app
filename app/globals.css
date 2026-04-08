@@ -34,6 +34,36 @@ body {
   animation: editor-saved-enter 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Site Settings: Context Panel — ruhiger Wechsel bei Sektionswechsel */
+@keyframes site-settings-context-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.site-settings-context-panel-body {
+  animation: site-settings-context-in 0.2s ease-out both;
+}
+
+/* Site Settings: Section Intro — kaum sichtbarer Wechsel */
+@keyframes site-settings-intro-in {
+  from {
+    opacity: 0.88;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.site-settings-section-intro-inner {
+  animation: site-settings-intro-in 0.18s ease-out both;
+}
+
 /* Next.js Dev-Tools: kein erzwungenes left/top:0 am Portal (wie im Inspector entfernt) */
 nextjs-portal {
   left: unset;
