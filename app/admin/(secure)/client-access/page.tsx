@@ -1,6 +1,10 @@
 import { ClientAccessCreateForm } from "@/components/admin/client-access-create-form";
 import { ClientAccessRows } from "@/components/admin/client-access-rows";
-import { listClientAccessBySiteId } from "@/lib/db/client-access-admin";
+import {
+  fetchSelectionStatsByAccessIds,
+  listClientAccessBySiteId,
+  type ClientAccessSelectionStat,
+} from "@/lib/db/client-access-admin";
 import { listProjects } from "@/lib/db/projects";
 import { getOptionalSupabaseServiceRoleKey } from "@/lib/db/supabase-server-env";
 import { DEFAULT_SITE_ID } from "@/lib/site-defaults";
@@ -19,10 +23,20 @@ export default async function AdminClientAccessPage() {
 
   let rows: ClientAccessAdminRow[] = [];
   let loadError: string | null = null;
+  let selectionStats: Record<string, ClientAccessSelectionStat> = {};
+  let selectionStatsUnavailable = false;
 
   if (hasServiceRole) {
     try {
       rows = await listClientAccessBySiteId(DEFAULT_SITE_ID);
+      if (rows.length > 0) {
+        const statsResult = await fetchSelectionStatsByAccessIds(rows.map((r) => r.id));
+        if (statsResult.ok) {
+          selectionStats = Object.fromEntries(statsResult.byAccessId);
+        } else {
+          selectionStatsUnavailable = true;
+        }
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not load client access.";
       loadError = msg;
@@ -85,7 +99,11 @@ export default async function AdminClientAccessPage() {
         ) : loadError ? (
           <p className="text-sm text-zinc-500">Fix the error above to see existing links.</p>
         ) : (
-          <ClientAccessRows rows={rows} />
+          <ClientAccessRows
+            rows={rows}
+            selectionStats={selectionStats}
+            selectionStatsUnavailable={selectionStatsUnavailable}
+          />
         )}
       </section>
     </div>

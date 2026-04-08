@@ -2,7 +2,10 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 
-import { createSupabaseServiceRoleClient } from "@/lib/db/supabase-service-role";
+import {
+  createSupabaseServiceRoleClient,
+  isSupabaseServiceRoleConfigurationError,
+} from "@/lib/db/supabase-service-role";
 import { supabaseReadError } from "@/lib/db/supabase-read-error";
 import type { ClientAccessAdminRow } from "@/types/client-access";
 
@@ -36,6 +39,84 @@ export async function listClientAccessBySiteId(siteId: string): Promise<ClientAc
   }
 
   return (data ?? []) as ClientAccessAdminRow[];
+}
+
+/** Aggregierte Selektionen pro `client_access_id` (eine Abfrage, kein N+1). */
+export type ClientAccessSelectionStat = {
+  total: number;
+  distinctProjects: number;
+};
+
+export type FetchSelectionStatsResult =
+  | { ok: true; byAccessId: Map<string, ClientAccessSelectionStat> }
+  | { ok: false; unavailable: true };
+
+/**
+ * Lädt für alle angegebenen Access-IDs die Selektionsanzahl und die Anzahl unterschiedlicher Projekte.
+ * Bei fehlendem/ungültigem Service-Role-Key oder DB-Fehler: `unavailable` (Admin soll nicht crashen).
+ */
+export async function fetchSelectionStatsByAccessIds(
+  accessIds: string[],
+): Promise<FetchSelectionStatsResult> {
+  const empty = (): FetchSelectionStatsResult => ({
+    ok: true,
+    byAccessId: new Map(),
+  });
+
+  if (accessIds.length === 0) {
+    return empty();
+  }
+
+  let supabase;
+  try {
+    supabase = createSupabaseServiceRoleClient();
+  } catch (e) {
+    if (isSupabaseServiceRoleConfigurationError(e)) {
+      return { ok: false, unavailable: true };
+    }
+    throw e;
+  }
+
+  const { data, error } = await supabase
+    .from("client_image_selections")
+    .select("client_access_id, project_id")
+    .in("client_access_id", accessIds);
+
+  if (error) {
+    console.error("fetchSelectionStatsByAccessIds:", error.message);
+    return { ok: false, unavailable: true };
+  }
+
+  const aggregate = new Map<string, { count: number; projects: Set<string> }>();
+
+  for (const raw of data ?? []) {
+    const row = raw as { client_access_id?: string; project_id?: string };
+    const aid = typeof row.client_access_id === "string" ? row.client_access_id.trim() : "";
+    if (!aid) {
+      continue;
+    }
+    let entry = aggregate.get(aid);
+    if (!entry) {
+      entry = { count: 0, projects: new Set<string>() };
+      aggregate.set(aid, entry);
+    }
+    entry.count += 1;
+    const pid = typeof row.project_id === "string" ? row.project_id.trim() : "";
+    if (pid) {
+      entry.projects.add(pid);
+    }
+  }
+
+  const byAccessId = new Map<string, ClientAccessSelectionStat>();
+  for (const id of accessIds) {
+    const agg = aggregate.get(id);
+    byAccessId.set(id, {
+      total: agg?.count ?? 0,
+      distinctProjects: agg ? agg.projects.size : 0,
+    });
+  }
+
+  return { ok: true, byAccessId };
 }
 
 const TOKEN_BYTES = 32;

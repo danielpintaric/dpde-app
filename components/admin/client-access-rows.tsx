@@ -4,6 +4,7 @@ import { setClientAccessActiveAction } from "@/lib/actions/admin-client-access-a
 import { parseProjectIdsColumn } from "@/lib/db/client-access-admin";
 import { isoToDatetimeLocalValue } from "@/lib/format-datetime-local";
 import { buildClientAccessAbsoluteUrl } from "@/lib/services/client-access-url";
+import type { ClientAccessSelectionStat } from "@/lib/db/client-access-admin";
 import type { ClientAccessAdminRow } from "@/types/client-access";
 
 function formatDisplayDate(iso: string | null): string {
@@ -20,7 +21,40 @@ function formatDisplayDate(iso: string | null): string {
   });
 }
 
-export function ClientAccessRows({ rows }: { rows: ClientAccessAdminRow[] }) {
+function selectionLabel(
+  unavailable: boolean,
+  stat: ClientAccessSelectionStat | undefined,
+): { main: string; sub?: string; highlight: boolean } {
+  if (unavailable) {
+    return { main: "Selection unavailable", highlight: false };
+  }
+  const total = stat?.total ?? 0;
+  const dp = stat?.distinctProjects ?? 0;
+  if (total === 0) {
+    return { main: "No selections", highlight: false };
+  }
+  const sub =
+    dp > 1
+      ? `Across ${dp} projects`
+      : dp === 1
+        ? "1 project"
+        : undefined;
+  return {
+    main: total === 1 ? "1 image selected" : `${total} images selected`,
+    sub,
+    highlight: true,
+  };
+}
+
+export function ClientAccessRows({
+  rows,
+  selectionStats = {},
+  selectionStatsUnavailable = false,
+}: {
+  rows: ClientAccessAdminRow[];
+  selectionStats?: Record<string, ClientAccessSelectionStat>;
+  selectionStatsUnavailable?: boolean;
+}) {
   if (rows.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-zinc-800/85 bg-zinc-950/40 px-6 py-14 text-center">
@@ -38,6 +72,7 @@ export function ClientAccessRows({ rows }: { rows: ClientAccessAdminRow[] }) {
         const count = ids.length;
         const url = buildClientAccessAbsoluteUrl(row.token);
         const expiryLocal = isoToDatetimeLocalValue(row.expires_at);
+        const sel = selectionLabel(selectionStatsUnavailable, selectionStats[row.id]);
 
         return (
           <li
@@ -60,16 +95,25 @@ export function ClientAccessRows({ rows }: { rows: ClientAccessAdminRow[] }) {
                     {row.is_active ? "Active" : "Inactive"}
                   </span>
                 </div>
-                <dl className="grid gap-1 text-[12px] text-zinc-500 sm:grid-cols-2 sm:gap-x-8">
+                <dl className="grid gap-1 text-[12px] text-zinc-500 sm:grid-cols-3 sm:gap-x-6">
                   <div>
                     <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-zinc-600">Projects</dt>
                     <dd className="text-zinc-400">{count}</dd>
                   </div>
                   <div>
+                    <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-zinc-600">Selections</dt>
+                    <dd className={sel.highlight ? "text-emerald-400/95" : "text-zinc-400"}>
+                      <span className="block">{sel.main}</span>
+                      {sel.sub ? (
+                        <span className="mt-0.5 block text-[11px] font-normal text-zinc-500">{sel.sub}</span>
+                      ) : null}
+                    </dd>
+                  </div>
+                  <div>
                     <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-zinc-600">Expires</dt>
                     <dd className="text-zinc-400">{formatDisplayDate(row.expires_at)}</dd>
                   </div>
-                  <div className="sm:col-span-2">
+                  <div className="sm:col-span-3">
                     <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-zinc-600">Created</dt>
                     <dd className="text-zinc-400">{formatDisplayDate(row.created_at)}</dd>
                   </div>
