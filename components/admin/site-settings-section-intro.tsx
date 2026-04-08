@@ -12,13 +12,17 @@ export function SiteSettingsSectionIntro({ activeSectionId, className = "" }: Pr
   const intro = getSiteSectionIntro(resolvedId);
 
   return (
-    <div className={`mb-8 max-w-[420px] space-y-2 sm:mb-10 sm:space-y-3 ${className}`.trim()}>
-      <div key={resolvedId} className="site-settings-section-intro-inner space-y-2 sm:space-y-3">
-        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-500">
+    <div
+      className={`mb-8 max-w-[520px] rounded-2xl border border-zinc-800/80 bg-gradient-to-b from-zinc-900/60 to-zinc-950/30 px-6 py-6 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm ${className}`.trim()}
+    >
+      <div key={resolvedId} className="site-settings-section-intro-inner space-y-2">
+        <p className="mb-2 text-[11px] uppercase tracking-[0.12em] text-zinc-500">
           {intro.label}
         </p>
-        <h2 className="text-lg font-medium leading-snug text-zinc-100 sm:text-xl">{intro.title}</h2>
-        <p className="text-sm leading-6 text-zinc-400">{intro.description}</p>
+        <h2 className="text-2xl font-semibold leading-tight tracking-tight text-zinc-100">
+          {intro.title}
+        </h2>
+        <p className="max-w-[38ch] text-sm text-zinc-400">{intro.description}</p>
       </div>
     </div>
   );

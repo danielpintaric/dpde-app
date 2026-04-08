@@ -13,7 +13,7 @@ import {
 } from "react";
 import { saveSiteHomeAction, type SiteHomeSaveState } from "@/lib/actions/admin-site-home-actions";
 import { AdminSaveBar } from "@/components/admin/admin-save-bar";
-import { AdminSection } from "@/components/admin/admin-section";
+import { AdminSection, AdminSectionAccordionProvider } from "@/components/admin/admin-section";
 import { serializeFormSnapshot } from "@/lib/admin/site-home-form-snapshot";
 import { useSiteSettingsScrollSpy } from "@/lib/admin/site-settings-scroll-spy";
 import { SITE_SECTIONS } from "@/lib/admin/site-sections";
@@ -35,7 +35,7 @@ const fieldClass =
   "w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none";
 const subsectionHeadingClass = "text-sm text-zinc-400";
 const formLayoutClass =
-  "mx-auto grid w-full max-w-[min(100%,100rem)] grid-cols-1 gap-8 px-4 pb-8 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[220px_minmax(0,1fr)_400px]";
+  "mx-auto grid w-full max-w-[min(100%,100rem)] grid-cols-1 items-start gap-8 px-4 pb-8 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[220px_minmax(0,1fr)_400px]";
 const formCenterClass = "mx-auto w-full min-w-0 max-w-5xl";
 
 type ProjectOption = Pick<Project, "id" | "title" | "slug">;
@@ -62,10 +62,10 @@ function SiteSettingsSidebar({
   return (
     <nav
       ref={navRef}
-      className="hidden lg:sticky lg:top-24 lg:z-20 lg:block lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:self-start"
+      className="hidden lg:sticky lg:top-20 lg:z-20 lg:block lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:self-start"
       aria-label="Sections on this page"
     >
-      <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-500">Sections</p>
+      <p className="mb-3 text-xs font-medium tracking-wide text-zinc-500 uppercase">Sections</p>
       <div className="flex flex-col gap-0.5">
         {items.map(({ href, label }) => {
           const id = href.slice(1);
@@ -1178,60 +1178,64 @@ export function SiteHomeForm({ initial, projects }: Props) {
         </div>
         <SiteSettingsSidebar activeSectionId={activeSectionId} navRef={sidebarNavRef} />
         <div className={formCenterClass}>
-          <SiteSettingsSectionIntro activeSectionId={activeSectionId} />
-          <AdminSection
-            id="site"
-            title="Site"
-            description="Public name, wordmark, logo, and copyright."
-          >
-            <SiteBrandFields initial={initial} />
-          </AdminSection>
-          <AdminSection
-            id="navigation"
-            title="Navigation"
-            description="Header links and the optional CTA beside the main menu."
-          >
-            <SiteNavigationFields initial={initial} />
-          </AdminSection>
-          <AdminSection
-            id="hero"
-            title="Hero"
-            description="Homepage headline, slideshow, and hero links. Empty title or subtitle falls back to defaults; leave all image slots empty to use the built-in hero image after save."
-          >
-            <SiteHeroFields
-              initial={initial}
-              heroSlotsKey={heroSlotsKey}
-              onHeroUrlsChange={checkDirty}
-            />
-          </AdminSection>
-          <AdminSection
-            id="featured"
-            title="Featured Work"
-            description="Curate the Selected work tiles and how the More work grid is filled."
-          >
-            <SiteFeaturedSection initial={initial} projects={projects} resetNonce={resetNonce} />
-          </AdminSection>
-          <AdminSection
-            id="about"
-            title="About"
-            description="Section labels, which blocks appear on the home page, and the Approach content."
-          >
-            <SiteAboutFields initial={initial} />
-          </AdminSection>
-          <AdminSection
-            id="contact"
-            title="Contact"
-            description="Email, phone, Instagram, and location shown on the site."
-          >
-            <SiteContactFields initial={initial} />
-          </AdminSection>
-          <AdminSection
-            id="footer"
-            title="Footer"
-            description="Tagline, primary CTA, and secondary links in the footer."
-          >
-            <SiteFooterFields initial={initial} />
-          </AdminSection>
+          <AdminSectionAccordionProvider defaultOpenId="site">
+            <div className="min-w-0">
+              <SiteSettingsSectionIntro activeSectionId={activeSectionId} />
+              <AdminSection
+                id="site"
+                title="Site"
+                description="Public name, wordmark, logo, and copyright."
+              >
+                <SiteBrandFields initial={initial} />
+              </AdminSection>
+            </div>
+            <AdminSection
+              id="navigation"
+              title="Navigation"
+              description="Header links and the optional CTA beside the main menu."
+            >
+              <SiteNavigationFields initial={initial} />
+            </AdminSection>
+            <AdminSection
+              id="hero"
+              title="Hero"
+              description="Homepage headline, slideshow, and hero links. Empty title or subtitle falls back to defaults; leave all image slots empty to use the built-in hero image after save."
+            >
+              <SiteHeroFields
+                initial={initial}
+                heroSlotsKey={heroSlotsKey}
+                onHeroUrlsChange={checkDirty}
+              />
+            </AdminSection>
+            <AdminSection
+              id="featured"
+              title="Featured Work"
+              description="Curate the Selected work tiles and how the More work grid is filled."
+            >
+              <SiteFeaturedSection initial={initial} projects={projects} resetNonce={resetNonce} />
+            </AdminSection>
+            <AdminSection
+              id="about"
+              title="About"
+              description="Section labels, which blocks appear on the home page, and the Approach content."
+            >
+              <SiteAboutFields initial={initial} />
+            </AdminSection>
+            <AdminSection
+              id="contact"
+              title="Contact"
+              description="Email, phone, Instagram, and location shown on the site."
+            >
+              <SiteContactFields initial={initial} />
+            </AdminSection>
+            <AdminSection
+              id="footer"
+              title="Footer"
+              description="Tagline, primary CTA, and secondary links in the footer."
+            >
+              <SiteFooterFields initial={initial} />
+            </AdminSection>
+          </AdminSectionAccordionProvider>
         </div>
         <SiteSettingsContextPanel activeSectionId={activeSectionId} />
       </div>

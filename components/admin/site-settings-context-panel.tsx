@@ -19,10 +19,10 @@ export function SiteSettingsContextPanel({ activeSectionId, className = "" }: Pr
 
   return (
     <aside
-      className={`hidden min-h-0 xl:block xl:min-w-0 ${className}`.trim()}
+      className={`mt-1 hidden min-h-0 self-stretch xl:block xl:min-w-0 ${className}`.trim()}
       aria-label="Editing guidance for the selected section"
     >
-      <div className="sticky top-24 space-y-5">
+      <div className="sticky top-20 space-y-5">
         <header className="space-y-2 border-b border-zinc-800/60 pb-5">
           <p className={headerEyebrowClass}>Context</p>
           <h2 className="font-serif text-lg font-normal tracking-[-0.02em] text-zinc-200">

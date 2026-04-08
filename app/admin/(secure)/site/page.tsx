@@ -72,17 +72,6 @@ export default async function AdminSiteLandingPage() {
 
   return (
     <div className="min-w-0">
-      <div className="mx-auto mb-10 max-w-5xl px-4 sm:px-6">
-        <div className="max-w-2xl">
-          <h1 className="font-serif text-[1.35rem] font-normal tracking-[-0.02em] text-zinc-100 sm:text-[1.5rem]">
-            Site
-          </h1>
-          <p className="mt-2 text-[13px] leading-relaxed text-zinc-500">
-            Control panel for brand, navigation, homepage hero, and landing content.
-          </p>
-        </div>
-      </div>
-
       {loadError ? (
         <div className="mx-auto mb-8 max-w-5xl px-4 sm:px-6">
           <p
