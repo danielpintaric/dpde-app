@@ -108,6 +108,11 @@ export function logSupabaseServiceRoleProductionDiagnostics(scope: string): void
 export function createSupabaseServiceRoleClient(): SupabaseClient {
   const { url } = getSupabasePublicConfig();
   const key = getOptionalSupabaseServiceRoleKey();
+
+  console.info(
+    `[service-role-check] present=${Boolean(key)} length=${key?.length ?? 0} vercelEnv=${getVercelDeploymentEnv() ?? "n/a"} nodeEnv=${process.env.NODE_ENV ?? "n/a"}`,
+  );
+
   if (!key) {
     logInvalidServiceRoleDiagnostics("missing");
     throw new SupabaseServiceRoleConfigurationError(
