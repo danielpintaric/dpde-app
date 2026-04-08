@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isSupabaseServiceRoleConfigurationError } from "@/lib/db/supabase-service-role";
 import { mutateClientImageSelection } from "@/lib/services/client-image-selection";
 
 export const dynamic = "force-dynamic";
@@ -29,10 +30,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  const result = await mutateClientImageSelection(token, project, imageId, action);
-  if (!result.ok) {
-    return NextResponse.json({ error: result.message }, { status: result.status });
-  }
+  try {
+    const result = await mutateClientImageSelection(token, project, imageId, action);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.message }, { status: result.status });
+    }
 
-  return NextResponse.json({ selected: result.selected });
+    return NextResponse.json({ selected: result.selected });
+  } catch (e) {
+    if (isSupabaseServiceRoleConfigurationError(e)) {
+      return NextResponse.json({ error: e.publicMessage }, { status: 503 });
+    }
+    throw e;
+  }
 }

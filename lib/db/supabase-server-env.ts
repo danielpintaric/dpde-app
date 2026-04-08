@@ -1,8 +1,8 @@
 import "server-only";
 
 /**
- * Optional service role key for trusted server jobs (e.g. admin scripts, elevated writes).
- * Never import this from client code or expose in responses.
+ * Nur `SUPABASE_SERVICE_ROLE_KEY` (Server-only, nie `NEXT_PUBLIC_*`).
+ * Für Storage/Admin: immer {@link createSupabaseServiceRoleClient} — kein Ersatz durch anon.
  */
 export function getOptionalSupabaseServiceRoleKey(): string | undefined {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();

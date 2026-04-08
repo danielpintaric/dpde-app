@@ -8,9 +8,10 @@ import {
 } from "@/lib/db/map-supabase-rows";
 import { resolveClientAccessForSelections } from "@/lib/db/client-access-resolve-server";
 import { lookupClientAccessByToken } from "@/lib/db/client-access-token";
-import { createSupabaseServerClient } from "@/lib/db/supabase-server";
-import { getOptionalSupabaseServiceRoleKey } from "@/lib/db/supabase-server-env";
-import { createSupabaseServiceRoleClient } from "@/lib/db/supabase-service-role";
+import {
+  getSupabaseServiceRoleClientOr503,
+  isSupabaseServiceRoleConfigurationError,
+} from "@/lib/db/supabase-service-role";
 import { supabaseReadError } from "@/lib/db/supabase-read-error";
 import type { PortfolioProject } from "@/lib/portfolio-data";
 import {
@@ -25,6 +26,7 @@ export type ClientTokenAreaState =
   | { kind: "missing_token" }
   | { kind: "invalid_link" }
   | { kind: "expired" }
+  | { kind: "service_unavailable"; message: string }
   | { kind: "ok"; clientName: string | null; projects: PortfolioProject[]; selectionCountTotal: number };
 
 /** `/client/[slug]?token=…` — detail view within a share. */
@@ -32,6 +34,7 @@ export type ClientTokenDetailState =
   | { kind: "missing_token" }
   | { kind: "invalid_link" }
   | { kind: "expired" }
+  | { kind: "service_unavailable"; message: string }
   | { kind: "not_found" }
   | { kind: "not_in_share" }
   | { kind: "incomplete" }
@@ -49,17 +52,6 @@ function compareImagesByGalleryOrder(a: Image, b: Image): number {
     return a.sortOrder - b.sortOrder;
   }
   return a.createdAt.localeCompare(b.createdAt);
-}
-
-async function getElevatedSupabaseForClientAccess(): Promise<SupabaseClient> {
-  if (getOptionalSupabaseServiceRoleKey()) {
-    try {
-      return createSupabaseServiceRoleClient();
-    } catch {
-      // Misconfigured key — fall back to server client (works when RLS allows).
-    }
-  }
-  return await createSupabaseServerClient();
 }
 
 async function listImagesByProjectIdsForClientAccess(
@@ -164,14 +156,41 @@ export async function resolveClientTokenArea(token: string | undefined): Promise
       return { kind: "invalid_link" };
     }
 
-    const supabase = await getElevatedSupabaseForClientAccess();
+    const elevated = getSupabaseServiceRoleClientOr503();
+    if (!elevated.ok) {
+      return { kind: "service_unavailable", message: elevated.message };
+    }
+    const supabase = elevated.client;
+
     const projects = await loadPortfolioProjectsOrdered(supabase, lookup.projectIds);
-    const resolved = await resolveClientAccessForSelections(raw, lookup);
-    const selectionCountTotal = resolved
-      ? await countSelectionsForAccess(resolved.accessId)
-      : 0;
+    let resolved: { accessId: string; siteId: string } | null;
+    try {
+      resolved = await resolveClientAccessForSelections(raw, lookup);
+    } catch (e) {
+      if (isSupabaseServiceRoleConfigurationError(e)) {
+        return { kind: "service_unavailable", message: e.publicMessage };
+      }
+      throw e;
+    }
+    let selectionCountTotal = 0;
+    if (resolved) {
+      try {
+        selectionCountTotal = await countSelectionsForAccess(resolved.accessId);
+      } catch (e) {
+        if (isSupabaseServiceRoleConfigurationError(e)) {
+          return { kind: "service_unavailable", message: e.publicMessage };
+        }
+        throw e;
+      }
+    }
     return { kind: "ok", clientName: lookup.clientName, projects, selectionCountTotal };
   } catch (e) {
+    if (isSupabaseServiceRoleConfigurationError(e)) {
+      return {
+        kind: "service_unavailable",
+        message: e.publicMessage,
+      };
+    }
     console.error("resolveClientTokenArea:", e);
     return { kind: "invalid_link" };
   }
@@ -208,7 +227,11 @@ export async function resolveClientTokenDetail(
       return { kind: "not_in_share" };
     }
 
-    const supabase = await getElevatedSupabaseForClientAccess();
+    const elevated = getSupabaseServiceRoleClientOr503();
+    if (!elevated.ok) {
+      return { kind: "service_unavailable", message: elevated.message };
+    }
+    const supabase = elevated.client;
     const { data: row, error } = await supabase
       .from("projects")
       .select("*")
@@ -253,14 +276,33 @@ export async function resolveClientTokenDetail(
         projectImageIds.add(im.imageId);
       }
     }
-    const resolved = await resolveClientAccessForSelections(raw, lookup);
-    const allSelected = resolved
-      ? await listSelectionImageIdsForAccess(resolved.accessId)
-      : [];
+    let resolved: { accessId: string; siteId: string } | null;
+    try {
+      resolved = await resolveClientAccessForSelections(raw, lookup);
+    } catch (e) {
+      if (isSupabaseServiceRoleConfigurationError(e)) {
+        return { kind: "service_unavailable", message: e.publicMessage };
+      }
+      throw e;
+    }
+    let allSelected: string[] = [];
+    if (resolved) {
+      try {
+        allSelected = await listSelectionImageIdsForAccess(resolved.accessId);
+      } catch (e) {
+        if (isSupabaseServiceRoleConfigurationError(e)) {
+          return { kind: "service_unavailable", message: e.publicMessage };
+        }
+        throw e;
+      }
+    }
     const selectedImageIds = allSelected.filter((id) => projectImageIds.has(id));
 
     return { kind: "ok", project: portfolio, prev, next, selectedImageIds };
   } catch (e) {
+    if (isSupabaseServiceRoleConfigurationError(e)) {
+      return { kind: "service_unavailable", message: e.publicMessage };
+    }
     console.error("resolveClientTokenDetail:", e);
     return { kind: "invalid_link" };
   }

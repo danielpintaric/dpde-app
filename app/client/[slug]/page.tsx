@@ -47,6 +47,9 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
         robots: { index: false, follow: false },
       };
     }
+    if (detail.kind === "service_unavailable") {
+      return { title: "Client area", robots: { index: false, follow: false } };
+    }
     return { title: "Client area", robots: { index: false, follow: false } };
   }
 
@@ -118,6 +121,12 @@ export default async function ClientProjectPage({ params, searchParams }: PagePr
           title="Invalid or expired access link"
           body="Check the link you were sent, or contact the studio for a new one."
         />
+      );
+    }
+
+    if (detail.kind === "service_unavailable") {
+      return (
+        <RestrictedBlock title="Temporarily unavailable" body={detail.message} />
       );
     }
 

@@ -3,23 +3,14 @@ import "server-only";
 import { mapImageRow, mapProjectRow, type ImageRow, type ProjectRow } from "@/lib/db/map-supabase-rows";
 import { resolveClientAccessForSelections } from "@/lib/db/client-access-resolve-server";
 import { lookupClientAccessByToken } from "@/lib/db/client-access-token";
-import { createSupabaseServerClient } from "@/lib/db/supabase-server";
-import { getOptionalSupabaseServiceRoleKey } from "@/lib/db/supabase-server-env";
-import { createSupabaseServiceRoleClient } from "@/lib/db/supabase-service-role";
+import {
+  createSupabaseServiceRoleClient,
+  getSupabaseServiceRoleClientOr503,
+  isSupabaseServiceRoleConfigurationError,
+  logSupabaseServiceRoleProductionDiagnostics,
+} from "@/lib/db/supabase-service-role";
 import { PROJECT_IMAGES_BUCKET } from "@/lib/storage/project-image-paths";
 import type { Image, Project } from "@/types/project";
-import type { SupabaseClient } from "@supabase/supabase-js";
-
-async function getElevatedSupabaseForClientAccess(): Promise<SupabaseClient | null> {
-  if (getOptionalSupabaseServiceRoleKey()) {
-    try {
-      return createSupabaseServiceRoleClient();
-    } catch {
-      // fall through
-    }
-  }
-  return await createSupabaseServerClient();
-}
 
 export type ClientDownloadAuthResult =
   | { ok: true; image: Image; project: Project }
@@ -43,10 +34,6 @@ export async function authorizeClientProjectForDownload(
     return { ok: false, status: 400, message: "Invalid request." };
   }
 
-  if (!getOptionalSupabaseServiceRoleKey()) {
-    return { ok: false, status: 503, message: "Downloads are temporarily unavailable." };
-  }
-
   const lookup = await lookupClientAccessByToken(rawToken);
   if (lookup.status === "expired") {
     return { ok: false, status: 403, message: "This access link has expired." };
@@ -60,10 +47,11 @@ export async function authorizeClientProjectForDownload(
     return { ok: false, status: 403, message: "Access denied." };
   }
 
-  const supabase = await getElevatedSupabaseForClientAccess();
-  if (!supabase) {
-    return { ok: false, status: 503, message: "Downloads are temporarily unavailable." };
+  const elevated = getSupabaseServiceRoleClientOr503();
+  if (!elevated.ok) {
+    return { ok: false, status: elevated.status, message: elevated.message };
   }
+  const supabase = elevated.client;
 
   const { data: projectRow, error: projectErr } = await supabase
     .from("projects")
@@ -83,7 +71,15 @@ export async function authorizeClientProjectForDownload(
     return { ok: false, status: 403, message: "This project is not included in your access." };
   }
 
-  const resolved = await resolveClientAccessForSelections(rawToken, lookup);
+  let resolved: { accessId: string; siteId: string } | null;
+  try {
+    resolved = await resolveClientAccessForSelections(rawToken, lookup);
+  } catch (e) {
+    if (isSupabaseServiceRoleConfigurationError(e)) {
+      return { ok: false, status: 503, message: e.publicMessage };
+    }
+    throw e;
+  }
   if (!resolved) {
     return { ok: false, status: 503, message: "Downloads are temporarily unavailable." };
   }
@@ -107,10 +103,6 @@ export async function authorizeClientImageDownload(
     return { ok: false, status: 400, message: "Invalid request." };
   }
 
-  if (!getOptionalSupabaseServiceRoleKey()) {
-    return { ok: false, status: 503, message: "Downloads are temporarily unavailable." };
-  }
-
   const lookup = await lookupClientAccessByToken(rawToken);
   if (lookup.status === "expired") {
     return { ok: false, status: 403, message: "This access link has expired." };
@@ -124,10 +116,11 @@ export async function authorizeClientImageDownload(
     return { ok: false, status: 403, message: "Access denied." };
   }
 
-  const supabase = await getElevatedSupabaseForClientAccess();
-  if (!supabase) {
-    return { ok: false, status: 503, message: "Downloads are temporarily unavailable." };
+  const elevated = getSupabaseServiceRoleClientOr503();
+  if (!elevated.ok) {
+    return { ok: false, status: elevated.status, message: elevated.message };
   }
+  const supabase = elevated.client;
 
   const { data: projectRow, error: projectErr } = await supabase
     .from("projects")
@@ -184,19 +177,24 @@ export function downloadFilenameForClientImage(projectSlug: string, image: Image
   return `${safeSlug}--${leaf}`;
 }
 
-/** Load file from bucket after authorization (service role). */
+/** Load file from bucket after authorization (service role only — no anon fallback). */
 export async function loadStorageObjectForDownload(storagePath: string): Promise<
   | { ok: true; blob: Blob }
-  | { ok: false }
+  | { ok: false; reason: "not_found" }
+  | { ok: false; reason: "service_unavailable"; message: string }
 > {
+  logSupabaseServiceRoleProductionDiagnostics("client-storage-download");
   try {
     const supabase = createSupabaseServiceRoleClient();
     const { data, error } = await supabase.storage.from(PROJECT_IMAGES_BUCKET).download(storagePath);
     if (error || !data) {
-      return { ok: false };
+      return { ok: false, reason: "not_found" };
     }
     return { ok: true, blob: data };
-  } catch {
-    return { ok: false };
+  } catch (e) {
+    if (isSupabaseServiceRoleConfigurationError(e)) {
+      return { ok: false, reason: "service_unavailable", message: e.publicMessage };
+    }
+    return { ok: false, reason: "not_found" };
   }
 }

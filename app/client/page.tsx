@@ -88,6 +88,21 @@ export default async function ClientTokenPage({ searchParams }: PageProps) {
     );
   }
 
+  if (state.kind === "service_unavailable") {
+    return (
+      <PageMain>
+        <div className={pageContentShell}>
+          <div className="mx-auto max-w-7xl">
+            <p className={typeMeta}>Private access</p>
+            <h1 className={`mt-2 ${typeH1Page}`}>Client area</h1>
+            <p className={`${stackTitleToBody} max-w-md ${typeBodyMuted}`}>Temporarily unavailable</p>
+            <p className={`mt-6 max-w-md text-sm ${typeBodyMuted}`}>{state.message}</p>
+          </div>
+        </div>
+      </PageMain>
+    );
+  }
+
   const { clientName, projects, selectionCountTotal } = state;
   const shareToken = (token ?? "").trim();
 

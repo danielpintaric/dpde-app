@@ -3,7 +3,10 @@ import "server-only";
 import archiver from "archiver";
 import { PassThrough } from "node:stream";
 import { Readable } from "node:stream";
-import { createSupabaseServiceRoleClient } from "@/lib/db/supabase-service-role";
+import {
+  getSupabaseServiceRoleClientOr503,
+  logSupabaseServiceRoleProductionDiagnostics,
+} from "@/lib/db/supabase-service-role";
 import { mapImageRow, type ImageRow } from "@/lib/db/map-supabase-rows";
 import { PROJECT_IMAGES_BUCKET } from "@/lib/storage/project-image-paths";
 import type { Image } from "@/types/project";
@@ -117,8 +120,15 @@ export async function buildClientSelectionZip(params: {
     return { ok: false, status: auth.status, message: auth.message };
   }
 
+  logSupabaseServiceRoleProductionDiagnostics("client-download-selected-zip");
+
+  const elevated = getSupabaseServiceRoleClientOr503();
+  if (!elevated.ok) {
+    return { ok: false, status: elevated.status, message: elevated.message };
+  }
+
   const { project, accessId } = auth;
-  const supabase = createSupabaseServiceRoleClient();
+  const supabase = elevated.client;
 
   const { data: selRows, error: selErr } = await supabase
     .from("client_image_selections")

@@ -3,9 +3,10 @@ import "server-only";
 import { mapImageRow, mapProjectRow, type ImageRow, type ProjectRow } from "@/lib/db/map-supabase-rows";
 import { resolveClientAccessForSelections } from "@/lib/db/client-access-resolve-server";
 import { lookupClientAccessByToken } from "@/lib/db/client-access-token";
-import { createSupabaseServerClient } from "@/lib/db/supabase-server";
-import { getOptionalSupabaseServiceRoleKey } from "@/lib/db/supabase-server-env";
-import { createSupabaseServiceRoleClient } from "@/lib/db/supabase-service-role";
+import {
+  getSupabaseServiceRoleClientOr503,
+  isSupabaseServiceRoleConfigurationError,
+} from "@/lib/db/supabase-service-role";
 import type { Project } from "@/types/project";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -14,17 +15,6 @@ const UUID_RE =
 
 function looksLikeProjectUuid(ref: string): boolean {
   return UUID_RE.test(ref.trim());
-}
-
-async function getElevatedSupabaseForClientAccess(): Promise<SupabaseClient | null> {
-  if (getOptionalSupabaseServiceRoleKey()) {
-    try {
-      return createSupabaseServiceRoleClient();
-    } catch {
-      // fall through
-    }
-  }
-  return await createSupabaseServerClient();
 }
 
 async function resolveProjectByRef(
@@ -66,10 +56,6 @@ export async function mutateClientImageSelection(
     return { ok: false, status: 400, message: "Invalid request." };
   }
 
-  if (!getOptionalSupabaseServiceRoleKey()) {
-    return { ok: false, status: 503, message: "Selection is temporarily unavailable." };
-  }
-
   const lookup = await lookupClientAccessByToken(rawToken);
   if (lookup.status === "expired") {
     return { ok: false, status: 403, message: "This access link has expired." };
@@ -83,10 +69,11 @@ export async function mutateClientImageSelection(
     return { ok: false, status: 403, message: "Access denied." };
   }
 
-  const supabase = await getElevatedSupabaseForClientAccess();
-  if (!supabase) {
-    return { ok: false, status: 503, message: "Selection is temporarily unavailable." };
+  const elevated = getSupabaseServiceRoleClientOr503();
+  if (!elevated.ok) {
+    return { ok: false, status: elevated.status, message: elevated.message };
   }
+  const supabase = elevated.client;
 
   const project = await resolveProjectByRef(supabase, projectRef);
   if (!project) {
@@ -115,13 +102,21 @@ export async function mutateClientImageSelection(
     return { ok: false, status: 403, message: "Access denied." };
   }
 
-  const resolved = await resolveClientAccessForSelections(rawToken, lookup);
+  let resolved: { accessId: string; siteId: string } | null;
+  try {
+    resolved = await resolveClientAccessForSelections(rawToken, lookup);
+  } catch (e) {
+    if (isSupabaseServiceRoleConfigurationError(e)) {
+      return { ok: false, status: 503, message: e.publicMessage };
+    }
+    throw e;
+  }
   if (!resolved) {
     return { ok: false, status: 503, message: "Selection is temporarily unavailable." };
   }
   const { accessId, siteId } = resolved;
 
-  const service = createSupabaseServiceRoleClient();
+  const service = supabase;
 
   const { data: existing, error: exErr } = await service
     .from("client_image_selections")

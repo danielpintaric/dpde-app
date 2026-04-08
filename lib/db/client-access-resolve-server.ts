@@ -1,7 +1,10 @@
 import "server-only";
 
 import type { ClientAccessTokenLookup } from "@/lib/db/client-access-token";
-import { createSupabaseServiceRoleClient } from "@/lib/db/supabase-service-role";
+import {
+  createSupabaseServiceRoleClient,
+  isSupabaseServiceRoleConfigurationError,
+} from "@/lib/db/supabase-service-role";
 import { getOptionalSupabaseServiceRoleKey } from "@/lib/db/supabase-server-env";
 
 type OkLookup = Extract<ClientAccessTokenLookup, { status: "ok" }>;
@@ -41,6 +44,9 @@ export async function resolveClientAccessForSelections(
       typeof siteRaw === "string" && siteRaw.trim().length > 0 ? siteRaw.trim() : "default";
     return { accessId: id, siteId };
   } catch (e) {
+    if (isSupabaseServiceRoleConfigurationError(e)) {
+      throw e;
+    }
     console.error("resolveClientAccessForSelections:", e);
     return null;
   }

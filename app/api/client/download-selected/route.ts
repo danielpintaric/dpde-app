@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isSupabaseServiceRoleConfigurationError } from "@/lib/db/supabase-service-role";
 import { buildClientSelectionZip } from "@/lib/services/client-download-selected";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +48,12 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (e) {
+    if (isSupabaseServiceRoleConfigurationError(e)) {
+      return new NextResponse(e.publicMessage, {
+        status: 503,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
     const msg = e instanceof Error ? e.message : "Download failed.";
     return new NextResponse(msg.slice(0, 200), {
       status: 500,

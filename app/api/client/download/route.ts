@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isSupabaseServiceRoleConfigurationError } from "@/lib/db/supabase-service-role";
 import {
   authorizeClientImageDownload,
   downloadFilenameForClientImage,
@@ -16,31 +17,47 @@ export async function GET(request: NextRequest) {
   const project = request.nextUrl.searchParams.get("project") ?? "";
   const image = request.nextUrl.searchParams.get("image") ?? "";
 
-  const auth = await authorizeClientImageDownload(token, project, image);
-  if (!auth.ok) {
-    return new NextResponse(auth.message, {
-      status: auth.status,
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
+  try {
+    const auth = await authorizeClientImageDownload(token, project, image);
+    if (!auth.ok) {
+      return new NextResponse(auth.message, {
+        status: auth.status,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
+
+    const loaded = await loadStorageObjectForDownload(auth.image.storagePath.trim());
+    if (!loaded.ok) {
+      if (loaded.reason === "service_unavailable") {
+        return new NextResponse(loaded.message, {
+          status: 503,
+          headers: { "Content-Type": "text/plain; charset=utf-8" },
+        });
+      }
+      return new NextResponse("File could not be loaded.", {
+        status: 404,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
+
+    const filename = downloadFilenameForClientImage(auth.project.slug, auth.image);
+    const asciiName = asciiContentDispositionFilename(filename);
+    const buf = await loaded.blob.arrayBuffer();
+
+    return new NextResponse(buf, {
+      status: 200,
+      headers: {
+        "Content-Type": loaded.blob.type || "application/octet-stream",
+        "Content-Disposition": `attachment; filename="${asciiName.replace(/"/g, "_")}"`,
+      },
     });
+  } catch (e) {
+    if (isSupabaseServiceRoleConfigurationError(e)) {
+      return new NextResponse(e.publicMessage, {
+        status: 503,
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      });
+    }
+    throw e;
   }
-
-  const loaded = await loadStorageObjectForDownload(auth.image.storagePath.trim());
-  if (!loaded.ok) {
-    return new NextResponse("File could not be loaded.", {
-      status: 404,
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    });
-  }
-
-  const filename = downloadFilenameForClientImage(auth.project.slug, auth.image);
-  const asciiName = asciiContentDispositionFilename(filename);
-  const buf = await loaded.blob.arrayBuffer();
-
-  return new NextResponse(buf, {
-    status: 200,
-    headers: {
-      "Content-Type": loaded.blob.type || "application/octet-stream",
-      "Content-Disposition": `attachment; filename="${asciiName.replace(/"/g, "_")}"`,
-    },
-  });
 }

@@ -1,7 +1,10 @@
 import "server-only";
 
-import { createSupabaseServiceRoleClient } from "@/lib/db/supabase-service-role";
-import { getOptionalSupabaseServiceRoleKey } from "@/lib/db/supabase-server-env";
+import {
+  createSupabaseServiceRoleClient,
+  getSupabaseServiceRoleClientOr503,
+  isSupabaseServiceRoleConfigurationError,
+} from "@/lib/db/supabase-service-role";
 
 /** PostgREST: relation not exposed / not in schema cache (migration not applied). */
 function isMissingClientImageSelectionsRelation(error: {
@@ -27,14 +30,12 @@ function warnMissingTableOnce(): void {
   );
 }
 
+/** True only if a valid service_role key is configured (kein bloßes Trim-String). */
 export function canPersistClientImageSelections(): boolean {
-  return Boolean(getOptionalSupabaseServiceRoleKey());
+  return getSupabaseServiceRoleClientOr503().ok;
 }
 
 export async function listSelectionImageIdsForAccess(accessId: string): Promise<string[]> {
-  if (!canPersistClientImageSelections()) {
-    return [];
-  }
   try {
     const supabase = createSupabaseServiceRoleClient();
     const { data, error } = await supabase
@@ -59,15 +60,15 @@ export async function listSelectionImageIdsForAccess(accessId: string): Promise<
     }
     return out;
   } catch (e) {
+    if (isSupabaseServiceRoleConfigurationError(e)) {
+      throw e;
+    }
     console.error("client_image_selections list:", e);
     return [];
   }
 }
 
 export async function countSelectionsForAccess(accessId: string): Promise<number> {
-  if (!canPersistClientImageSelections()) {
-    return 0;
-  }
   try {
     const supabase = createSupabaseServiceRoleClient();
     const { count, error } = await supabase
@@ -85,6 +86,9 @@ export async function countSelectionsForAccess(accessId: string): Promise<number
     }
     return typeof count === "number" ? count : 0;
   } catch (e) {
+    if (isSupabaseServiceRoleConfigurationError(e)) {
+      throw e;
+    }
     console.error("client_image_selections count:", e);
     return 0;
   }
