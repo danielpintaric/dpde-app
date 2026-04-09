@@ -8,16 +8,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { adminSectionScrollMarginClass } from "@/lib/admin/admin-mobile-layout";
 
 function cn(...classes: Array<string | undefined | false>) {
   return classes.filter(Boolean).join(" ");
 }
-
-/**
- * Anchor offset: safe area + admin header + (max-lg) sticky pill nav + gap; lg+ matches prior sidebar layout.
- */
-const sectionScrollClass =
-  "max-lg:scroll-mt-[calc(env(safe-area-inset-top,0px)+3.5rem+2.875rem+0.5rem)] max-lg:sm:scroll-mt-[calc(env(safe-area-inset-top,0px)+4rem+2.875rem+0.5rem)] lg:scroll-mt-[calc(env(safe-area-inset-top,0px)+4rem+0.5rem)]";
 
 type AccordionContextValue = {
   openSectionId: string | null;
@@ -72,7 +67,7 @@ export function AdminSection({ id, title, description, children }: Props) {
     <section
       id={id}
       className={cn(
-        sectionScrollClass,
+        adminSectionScrollMarginClass,
         "mb-10 rounded-2xl border px-6 py-6 transition-all duration-200",
         isActive ? "border-zinc-700 bg-zinc-950/50" : "border-zinc-800/60 bg-zinc-950/30",
         "hover:border-zinc-700/80",

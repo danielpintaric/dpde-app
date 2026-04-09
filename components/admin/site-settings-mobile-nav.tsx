@@ -11,6 +11,9 @@ const pillBaseClass =
 const pillInactiveClass = `${pillBaseClass} border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/60 hover:text-zinc-200`;
 const pillActiveClass = `${pillBaseClass} border-zinc-600 bg-zinc-800/90 text-zinc-100 shadow-sm shadow-black/20 ring-1 ring-white/5`;
 
+const scrollH =
+  "[scrollbar-width:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0";
+
 type Props = {
   sections: readonly SiteSettingsSectionItem[];
   activeSectionId: string | null;
@@ -38,25 +41,28 @@ export function SiteSettingsMobileNav({ sections, activeSectionId }: Props) {
   }, [activeSectionId]);
 
   return (
-    <nav
-      className="overflow-x-auto px-4 pb-3 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0"
-      aria-label="Site settings sections"
-    >
-      <div className="flex min-w-max gap-2 pb-0.5">
-        {sections.map(({ id, label }) => {
-          const isActive = activeSectionId === id;
-          return (
-            <a
-              key={id}
-              href={`#${id}`}
-              data-site-settings-pill={id}
-              className={isActive ? pillActiveClass : pillInactiveClass}
-              aria-current={isActive ? "location" : undefined}
-            >
-              {label}
-            </a>
-          );
-        })}
+    <nav className="px-4 pb-3" aria-label="Site settings sections">
+      {/*
+        Horizontal scroll on an inner strip only — avoids overflow-x-auto forcing overflow-y
+        to clip active pill rings / tops against the sticky wrapper edge.
+      */}
+      <div className={`overflow-x-auto py-0.5 ${scrollH}`}>
+        <div className="flex min-w-max gap-2">
+          {sections.map(({ id, label }) => {
+            const isActive = activeSectionId === id;
+            return (
+              <a
+                key={id}
+                href={`#${id}`}
+                data-site-settings-pill={id}
+                className={isActive ? pillActiveClass : pillInactiveClass}
+                aria-current={isActive ? "location" : undefined}
+              >
+                {label}
+              </a>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );

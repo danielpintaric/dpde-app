@@ -8,120 +8,28 @@ import { linkFocusVisible, tapSoft, transitionQuick, typeMeta } from "@/lib/edit
 import { GalleryFrame } from "./gallery-frame";
 import { Lightbox } from "./lightbox";
 
-type EditorialRow =
-  | { kind: "full"; image: ProjectImage; index: number }
-  | {
-      kind: "split";
-      left: ProjectImage;
-      right: ProjectImage;
-      leftIndex: number;
-      rightIndex: number;
-      leftSpan: 7 | 5 | 6;
-      rightSpan: 7 | 5 | 6;
-    };
+const UNIFORM_ASPECT = "aspect-[4/5]";
 
-/** Repeating 7/5 → 5/7 → 6/6 after the opening full-width plate */
-const SPLIT_CYCLE = [
-  [7, 5],
-  [5, 7],
-  [6, 6],
-] as const;
+const gridGap = "grid grid-cols-2 gap-5 sm:gap-6 md:grid-cols-3 md:gap-6 lg:gap-7";
 
-export function buildEditorialRows(images: ProjectImage[]): EditorialRow[] {
-  if (images.length === 0) return [];
-  const rows: EditorialRow[] = [];
-  let i = 0;
-  let seq = 0;
-  const n = images.length;
-
-  rows.push({ kind: "full", image: images[i++]!, index: seq++ });
-
-  let cycle = 0;
-  while (i < n) {
-    const remaining = n - i;
-    if (remaining === 1) {
-      rows.push({ kind: "full", image: images[i++]!, index: seq++ });
-      break;
-    }
-    const [ls, rs] = SPLIT_CYCLE[cycle % SPLIT_CYCLE.length]!;
-    cycle += 1;
-    rows.push({
-      kind: "split",
-      left: images[i++]!,
-      right: images[i++]!,
-      leftIndex: seq++,
-      rightIndex: seq++,
-      leftSpan: ls,
-      rightSpan: rs,
-    });
-  }
-
-  return rows;
-}
-
-function lgColSpan(span: 12 | 7 | 5 | 6): string {
-  switch (span) {
-    case 12:
-      return "lg:col-span-12";
-    case 7:
-      return "lg:col-span-7";
-    case 5:
-      return "lg:col-span-5";
-    case 6:
-      return "lg:col-span-6";
-    default:
-      return "lg:col-span-12";
-  }
-}
-
-function lgColStartForRight(leftSpan: 7 | 5 | 6): string {
-  switch (leftSpan) {
-    case 7:
-      return "lg:col-start-8";
-    case 5:
-      return "lg:col-start-6";
-    case 6:
-      return "lg:col-start-7";
-    default:
-      return "lg:col-start-auto";
-  }
-}
-
-const SPLIT_RIGHT_OFFSET = ["", "lg:mt-24", "lg:mt-16", "lg:mt-32"] as const;
-
-const ROW_GAP_AFTER_FIRST = "mt-12 sm:mt-16 lg:mt-20";
-
-function rowTopClass(rowIndex: number): string {
-  return rowIndex === 0 ? "" : ROW_GAP_AFTER_FIRST;
-}
-
-function splitRightExtraClass(splitIndex: number): string {
-  return SPLIT_RIGHT_OFFSET[splitIndex % SPLIT_RIGHT_OFFSET.length] ?? "";
-}
-
-function splitRowsBefore(rows: EditorialRow[], rowIndex: number): number {
-  let n = 0;
-  for (let i = 0; i < rowIndex; i++) {
-    if (rows[i]?.kind === "split") {
-      n += 1;
-    }
-  }
-  return n;
-}
+const gridSizes =
+  "(min-width: 1024px) 22vw, (min-width: 768px) 30vw, (min-width: 640px) 45vw, 50vw";
 
 type EditorialGalleryProps = {
   images: ProjectImage[];
   clientDownload?: { token: string; projectSlug: string };
   /** When true, show selection controls (requires ClientSelectionProvider on the page). */
   useClientSelection?: boolean;
+  /** Shown quietly in the lightbox header */
+  galleryTitle?: string;
 };
 
 export function EditorialGallery({
   images,
   clientDownload,
   useClientSelection = false,
+  galleryTitle,
 }: EditorialGalleryProps) {
-  const rows = buildEditorialRows(images);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [zipBusy, setZipBusy] = useState(false);
@@ -144,24 +52,37 @@ export function EditorialGallery({
   const openAt = useCallback((index: number) => {
     setLightboxIndex(index);
     setLightboxOpen(true);
-  }, [setLightboxIndex, setLightboxOpen]);
+  }, []);
 
   const closeLightbox = useCallback(() => {
     setLightboxOpen(false);
-  }, [setLightboxOpen]);
-
-  if (rows.length === 0) return null;
+  }, []);
 
   const showSelectionSummary =
     Boolean(useClientSelection && selection) && (selection?.selectedCount ?? 0) > 0;
 
+  if (images.length === 0) {
+    return (
+      <section className="mt-12 border-t border-zinc-800/40 pb-10 pt-12 sm:mt-14 sm:pt-14 sm:pb-12 lg:mt-16 lg:pt-16 lg:pb-14">
+        <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-8">
+          <div className="rounded-xl border border-dashed border-zinc-800/55 bg-zinc-900/35 px-8 py-16 text-center sm:py-20">
+            <p className="font-serif text-base tracking-tight text-zinc-300">No images yet</p>
+            <p className="mt-3 max-w-sm mx-auto text-sm leading-relaxed text-zinc-500">
+              Images will appear here when the studio adds them to this project.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <>
       <section className="mt-12 border-t border-zinc-800/40 pb-10 pt-12 sm:mt-14 sm:pt-14 sm:pb-12 lg:mt-16 lg:pt-16 lg:pb-14">
-        <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
+        <div className="mx-auto max-w-6xl px-6 sm:px-10 lg:px-8">
           {showSelectionSummary && selection ? (
             <div
-              className={`${typeMeta} mb-10 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-zinc-500`}
+              className={`${typeMeta} mb-8 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-zinc-500 sm:mb-10`}
             >
               <p className="m-0">
                 {selection.selectedCount === 1
@@ -186,59 +107,30 @@ export function EditorialGallery({
               </span>
             </div>
           ) : null}
-          {rows.map((row, rowIndex) => {
-            if (row.kind === "full") {
+
+          <ul className={`list-none p-0 m-0 ${gridGap}`}>
+            {images.map((image, index) => {
+              const imageId = image.imageId?.trim() ?? "";
+              const isSelected =
+                Boolean(useClientSelection && selection && imageId) &&
+                Boolean(selection?.selected.has(imageId));
+
               return (
-                <div key={`full-${row.image.src}-${rowIndex}`} className={rowTopClass(rowIndex)}>
+                <li key={`${image.src}-${index}`} className="min-w-0">
                   <GalleryFrame
-                    image={row.image}
-                    aspectClass={row.image.aspectClass}
-                    sizes="(min-width: 1280px) min(72rem, 90vw), (min-width: 768px) 90vw, 100vw"
+                    image={image}
+                    aspectClass={UNIFORM_ASPECT}
+                    sizes={gridSizes}
                     clientDownload={clientDownload}
                     useClientSelection={useClientSelection}
-                    onOpen={() => openAt(row.index)}
+                    onOpen={() => openAt(index)}
+                    variant="grid"
+                    selected={isSelected}
                   />
-                </div>
+                </li>
               );
-            }
-
-            const si = splitRowsBefore(rows, rowIndex);
-
-            const { left, right, leftSpan, rightSpan, leftIndex, rightIndex } = row;
-            const leftSpanClass = lgColSpan(leftSpan);
-            const rightSpanClass = lgColSpan(rightSpan);
-            const rightStartClass = lgColStartForRight(leftSpan);
-
-            return (
-              <div
-                key={`split-${left.src}-${right.src}-${rowIndex}`}
-                className={`${rowTopClass(rowIndex)} grid grid-cols-1 gap-y-12 md:grid-cols-2 md:gap-x-8 md:gap-y-12 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-0`}
-              >
-                <div className={`md:col-span-1 ${leftSpanClass}`}>
-                  <GalleryFrame
-                    image={left}
-                    aspectClass={left.aspectClass}
-                    sizes="(min-width: 1280px) 45vw, (min-width: 768px) 46vw, 100vw"
-                    clientDownload={clientDownload}
-                    useClientSelection={useClientSelection}
-                    onOpen={() => openAt(leftIndex)}
-                  />
-                </div>
-                <div
-                  className={`md:col-span-1 ${rightSpanClass} ${rightStartClass} ${splitRightExtraClass(si)}`}
-                >
-                  <GalleryFrame
-                    image={right}
-                    aspectClass={right.aspectClass}
-                    sizes="(min-width: 1280px) 40vw, (min-width: 768px) 46vw, 100vw"
-                    clientDownload={clientDownload}
-                    useClientSelection={useClientSelection}
-                    onOpen={() => openAt(rightIndex)}
-                  />
-                </div>
-              </div>
-            );
-          })}
+            })}
+          </ul>
         </div>
       </section>
 
@@ -248,6 +140,7 @@ export function EditorialGallery({
         activeIndex={lightboxIndex}
         onActiveIndexChange={setLightboxIndex}
         onClose={closeLightbox}
+        galleryTitle={galleryTitle}
       />
     </>
   );

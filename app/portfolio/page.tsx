@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { GalleryHoverLoupe } from "@/components/gallery/gallery-hover-loupe";
 import { PageMain } from "@/components/site-chrome";
 import {
-  editorialImage,
-  editorialImageOverlay,
   focusRing,
+  galleryGridImage,
   linkFocusVisible,
   pageContentShell,
+  portfolioIndexThumbAspect,
+  portfolioIndexThumbMediaOverlay,
+  portfolioIndexThumbShell,
   stackTitleToBody,
   tapSoft,
   transitionColorsQuick,
@@ -56,41 +59,53 @@ export default async function PortfolioPage() {
             ))}
           </div>
 
-          <ul className="mt-14 grid grid-cols-1 gap-x-10 gap-y-14 sm:grid-cols-2 lg:mt-20 lg:gap-x-12 lg:gap-y-20">
-            {projects.map((project, i) => (
-              <li key={project.slug} className={i % 2 === 1 ? "sm:mt-6 lg:mt-10" : ""}>
-                <Link
-                  href={`/portfolio/${project.slug}`}
-                  className={`group block cursor-pointer ${focusRing}`}
-                >
-                  <div className="relative overflow-hidden bg-zinc-900">
-                    <div className="relative aspect-[4/5] w-full sm:aspect-[3/4]">
-                      <img
-                        src={project.coverImage}
-                        alt=""
-                        className={`absolute inset-0 h-full w-full ${editorialImage}`}
-                        sizes="(min-width: 1024px) 40vw, 50vw"
-                        loading="lazy"
-                      />
-                      <div className={`${editorialImageOverlay} z-[1]`} aria-hidden />
-                    </div>
-                  </div>
-                  <div className="mt-5 flex flex-col gap-1 sm:mt-6 sm:flex-row sm:items-baseline sm:justify-between">
-                    <h2
-                      className={`${typeH2Section} text-xl ${transitionColorsQuick} sm:text-2xl group-hover:text-zinc-100/88`}
+          <div className="mx-auto mt-14 max-w-6xl lg:mt-20">
+            {projects.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-zinc-800/55 bg-zinc-900/35 px-8 py-16 text-center sm:py-20">
+                <p className="font-serif text-base tracking-tight text-zinc-300">No images yet</p>
+                <p className="mt-3 mx-auto max-w-sm text-sm leading-relaxed text-zinc-500">
+                  Upload images to get started — projects will appear here once they are published.
+                </p>
+              </div>
+            ) : (
+              <ul className="grid list-none grid-cols-1 gap-x-6 gap-y-12 p-0 m-0 sm:grid-cols-2 sm:gap-y-14 lg:gap-x-8 lg:gap-y-16">
+                {projects.map((project) => (
+                  <li key={project.slug}>
+                    <Link
+                      href={`/portfolio/${project.slug}`}
+                      className={`group block cursor-pointer ${focusRing} ${tapSoft}`}
                     >
-                      {project.title}
-                    </h2>
-                    <p className={typeMeta}>
-                      {project.category}
-                      <span className="mx-2 text-zinc-700">·</span>
-                      {project.year}
-                    </p>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                      <div className={portfolioIndexThumbShell}>
+                        <div className={portfolioIndexThumbAspect}>
+                          <img
+                            src={project.coverImage}
+                            alt=""
+                            className={`absolute inset-0 h-full w-full ${galleryGridImage}`}
+                            sizes="(min-width: 1024px) 30vw, 50vw"
+                            loading="lazy"
+                          />
+                          <div className={portfolioIndexThumbMediaOverlay} aria-hidden />
+                          <GalleryHoverLoupe />
+                        </div>
+                      </div>
+                      <div className="mt-5 flex flex-col gap-1 sm:mt-6 sm:flex-row sm:items-baseline sm:justify-between">
+                        <h2
+                          className={`${typeH2Section} text-xl ${transitionColorsQuick} sm:text-2xl group-hover:text-zinc-100/88`}
+                        >
+                          {project.title}
+                        </h2>
+                        <p className={typeMeta}>
+                          {project.category}
+                          <span className="mx-2 text-zinc-700">·</span>
+                          {project.year}
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </PageMain>

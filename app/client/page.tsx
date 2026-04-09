@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import NextImage from "next/image";
 import Link from "next/link";
+import { GalleryHoverLoupe } from "@/components/gallery/gallery-hover-loupe";
 import { PageMain } from "@/components/site-chrome";
 import {
   focusRing,
+  galleryGridImage,
   linkFocusVisible,
   pageContentShell,
+  portfolioIndexThumbAspect,
+  portfolioIndexThumbMediaOverlay,
+  portfolioIndexThumbShell,
   stackTitleToBody,
   tapSoft,
   typeBodyMuted,
@@ -129,50 +134,54 @@ export default async function ClientTokenPage({ searchParams }: PageProps) {
             </p>
           ) : null}
 
-          {projects.length === 0 ? (
-            <p className={`mt-12 text-sm ${typeBodyMuted}`}>
-              No projects are available on this link yet. If something is missing, contact the studio.
-            </p>
-          ) : (
-            <ul className="mt-12 grid grid-cols-1 gap-x-10 gap-y-12 sm:mt-14 sm:grid-cols-2 lg:mt-20">
-              {projects.map((p, i) => (
-                <li key={p.slug} className={i % 2 === 1 ? "sm:mt-6 lg:mt-10" : ""}>
-                  <Link
-                    href={`/client/${encodeURIComponent(p.slug)}?token=${encodeURIComponent(shareToken)}`}
-                    className={`group block cursor-pointer ${focusRing} ${linkFocusVisible} ${tapSoft}`}
-                  >
-                    <div className="relative overflow-hidden bg-zinc-900">
-                      <div className="relative aspect-[4/5] w-full sm:aspect-[3/4]">
-                        <NextImage
-                          src={p.coverImage}
-                          alt=""
-                          fill
-                          className="object-cover object-center brightness-[0.92] contrast-[1.04]"
-                          sizes="(min-width: 1024px) 40vw, 50vw"
-                          priority={i === 0}
-                          unoptimized
-                        />
-                        <div
-                          className="pointer-events-none absolute inset-0 z-[1] bg-zinc-950/25"
-                          aria-hidden
-                        />
+          <div className="mx-auto mt-12 max-w-6xl sm:mt-14 lg:mt-20">
+            {projects.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-zinc-800/55 bg-zinc-900/35 px-8 py-16 text-center sm:py-20">
+                <p className="font-serif text-base tracking-tight text-zinc-300">No images yet</p>
+                <p className="mt-3 mx-auto max-w-sm text-sm leading-relaxed text-zinc-500">
+                  The studio has not shared any projects on this link yet. Check back later or get in touch if
+                  something is missing.
+                </p>
+              </div>
+            ) : (
+              <ul className="grid list-none grid-cols-1 gap-x-6 gap-y-12 p-0 m-0 sm:grid-cols-2 sm:gap-y-14 lg:gap-x-8 lg:gap-y-16">
+                {projects.map((p, i) => (
+                  <li key={p.slug}>
+                    <Link
+                      href={`/client/${encodeURIComponent(p.slug)}?token=${encodeURIComponent(shareToken)}`}
+                      className={`group block cursor-pointer ${focusRing} ${linkFocusVisible} ${tapSoft}`}
+                    >
+                      <div className={portfolioIndexThumbShell}>
+                        <div className={portfolioIndexThumbAspect}>
+                          <NextImage
+                            src={p.coverImage}
+                            alt=""
+                            fill
+                            className={`${galleryGridImage} object-center`}
+                            sizes="(min-width: 1024px) 30vw, 50vw"
+                            priority={i === 0}
+                            unoptimized
+                          />
+                          <div className={portfolioIndexThumbMediaOverlay} aria-hidden />
+                          <GalleryHoverLoupe />
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-5 flex flex-col gap-1 sm:mt-6 sm:flex-row sm:items-baseline sm:justify-between">
-                      <h2 className="font-serif text-xl tracking-tight text-zinc-100 sm:text-2xl">
-                        {p.title}
-                      </h2>
-                      <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-zinc-500">
-                        {p.category}
-                        <span className="mx-2 text-zinc-700">·</span>
-                        {p.year}
-                      </p>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+                      <div className="mt-5 flex flex-col gap-1 sm:mt-6 sm:flex-row sm:items-baseline sm:justify-between">
+                        <h2 className="font-serif text-xl tracking-tight text-zinc-100 sm:text-2xl">
+                          {p.title}
+                        </h2>
+                        <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-zinc-500">
+                          {p.category}
+                          <span className="mx-2 text-zinc-700">·</span>
+                          {p.year}
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </PageMain>

@@ -16,6 +16,7 @@ import { AdminSaveBar } from "@/components/admin/admin-save-bar";
 import { AdminSection, AdminSectionAccordionProvider } from "@/components/admin/admin-section";
 import { serializeFormSnapshot } from "@/lib/admin/site-home-form-snapshot";
 import { useSiteSettingsScrollSpy } from "@/lib/admin/site-settings-scroll-spy";
+import { adminSiteSettingsStickyPillClass } from "@/lib/admin/admin-mobile-layout";
 import { SITE_SECTIONS } from "@/lib/admin/site-sections";
 import { SiteSettingsContextPanel } from "@/components/admin/site-settings-context-panel";
 import { SiteSettingsSectionIntro } from "@/components/admin/site-settings-section-intro";
@@ -1170,10 +1171,7 @@ export function SiteHomeForm({ initial, projects }: Props) {
       onChange={checkDirty}
     >
       <div className={`${formLayoutClass} ${bottomPadClass}`}>
-        <div
-          ref={mobileStickyRef}
-          className="sticky top-[calc(env(safe-area-inset-top,0px)+3.5rem)] z-30 col-span-full -mx-4 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md supports-[backdrop-filter]:bg-zinc-950/75 sm:-mx-6 sm:top-[calc(env(safe-area-inset-top,0px)+4rem)] lg:hidden"
-        >
+        <div ref={mobileStickyRef} className={adminSiteSettingsStickyPillClass}>
           <SiteSettingsMobileNav sections={SITE_SECTIONS} activeSectionId={activeSectionId} />
         </div>
         <SiteSettingsSidebar activeSectionId={activeSectionId} navRef={sidebarNavRef} />

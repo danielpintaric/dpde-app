@@ -38,12 +38,23 @@ export const tapSoft = "active:opacity-[0.9]";
 export const editorialImage =
   "object-cover brightness-[0.97] contrast-[1.02] transition-transform duration-[550ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]";
 
+/** Uniform grid cards: cover, no inner zoom (scale lives on the card wrapper). */
+export const galleryGridImage =
+  "h-full w-full object-cover brightness-[0.97] contrast-[1.02]";
+
 /** Hero or static leads — same tone, no hover */
 export const editorialImageTone =
   "object-cover brightness-[0.97] contrast-[1.02]";
 
 export const editorialImageOverlay =
   "pointer-events-none absolute inset-0 bg-zinc-950/[0.07]";
+
+/** Work / client index: project thumbnail as a calm gallery tile */
+export const portfolioIndexThumbShell =
+  "relative overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-900 transition-all duration-200 group-hover:border-zinc-700 group-hover:scale-[1.01]";
+export const portfolioIndexThumbAspect = "relative aspect-[4/5] w-full";
+export const portfolioIndexThumbMediaOverlay =
+  "pointer-events-none absolute inset-0 z-[1] bg-black/0 transition-colors duration-200 group-hover:bg-black/10";
 
 export const editorialFrame = `group relative block overflow-hidden bg-zinc-900 ${focusRing}`;
 

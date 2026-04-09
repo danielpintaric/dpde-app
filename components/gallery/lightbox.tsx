@@ -11,19 +11,31 @@ type LightboxProps = {
   activeIndex: number;
   onActiveIndexChange: (index: number) => void;
   onClose: () => void;
+  /** Optional project title — shown quietly in the header when set */
+  galleryTitle?: string;
 };
 
-/** Overlay fade — calm settle-in (match `duration-[350ms]` in JSX) */
-const OVERLAY_MS = 350;
-/** Image scale/opacity — lightbox open/close shell (match `duration-[400ms]`) */
-const IMAGE_MOTION_MS = 400;
-/** Exit uses parallel overlay + image; buffer so unmount never clips the tail */
-const UNMOUNT_AFTER_CLOSE_MS = Math.max(OVERLAY_MS, IMAGE_MOTION_MS) + 50;
+/** Overlay + shell — calm fade (match duration in classNames) */
+const OVERLAY_MS = 220;
+/** Image shell open/close */
+const IMAGE_MOTION_MS = 200;
+const UNMOUNT_AFTER_CLOSE_MS = Math.max(OVERLAY_MS, IMAGE_MOTION_MS) + 60;
+
 type LayerSide = "a" | "b";
 
-/** Next/prev crossfade — 220ms (`duration-[220ms]` fixed for Tailwind JIT) */
 const LAYER_TRANSITION =
-  "absolute inset-0 transition-opacity ease-out duration-[220ms] motion-reduce:duration-0 motion-reduce:transition-none";
+  "absolute inset-0 transition-opacity ease-out duration-200 motion-reduce:duration-0 motion-reduce:transition-none";
+
+const glassCloseBtn =
+  "inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-700/55 bg-zinc-900/75 text-zinc-300 shadow-sm backdrop-blur-md transition-[background-color,color,border-color] duration-200 hover:border-zinc-600/70 hover:bg-zinc-800/85 hover:text-zinc-100 md:h-11 md:w-11";
+
+const glassNavBtn =
+  "pointer-events-auto absolute top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-zinc-700/55 bg-zinc-900/75 text-zinc-300 shadow-sm backdrop-blur-md transition-[background-color,color,border-color] duration-200 hover:border-zinc-600/70 hover:bg-zinc-800/85 hover:text-zinc-100 active:scale-[0.98] md:h-12 md:w-12";
+
+/** Stable stage box — explicit height so object-contain + fill layout is stable */
+const stageBoxClass =
+  "relative isolate mx-auto h-[min(76vh,calc(100svh-9.25rem))] w-full max-w-[min(96vw,1440px)] min-h-[180px] " +
+  "sm:h-[min(80vh,calc(100svh-8.5rem))] md:h-[min(82vh,calc(100svh-8rem))] lg:h-[min(84vh,calc(100svh-7.5rem))]";
 
 function useScrollLock(locked: boolean) {
   useEffect(() => {
@@ -42,13 +54,13 @@ export function Lightbox({
   activeIndex,
   onActiveIndexChange,
   onClose,
+  galleryTitle,
 }: LightboxProps) {
   const [mounted, setMounted] = useState(false);
   const [overlayVisible, setOverlayVisible] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  /** Stacked layers for nav crossfade */
   const [indexA, setIndexA] = useState(0);
   const [indexB, setIndexB] = useState(0);
   const [activeLayer, setActiveLayer] = useState<LayerSide>("a");
@@ -89,7 +101,6 @@ export function Lightbox({
     }
   }, [open]);
 
-  /** Crossfade when slide index changes (not on initial sync) */
   useEffect(() => {
     if (!mounted || !overlayVisible || count === 0) return;
 
@@ -223,138 +234,193 @@ export function Lightbox({
   const imgA = safe(indexA);
   const imgB = safe(indexB);
 
+  const showCounter = count > 1;
+  const titleTrimmed = galleryTitle?.trim();
+
   return (
     <div
       ref={containerRef}
       role="dialog"
       aria-modal="true"
-      aria-label="Image viewer"
+      aria-label={titleTrimmed ? `Image viewer — ${titleTrimmed}` : "Image viewer"}
       className={
-        "fixed inset-0 z-[200] flex items-center justify-center p-4 outline-none ease-out motion-reduce:transition-none " +
-        "transition-[opacity,backdrop-filter] duration-[350ms] motion-reduce:duration-200 " +
+        "fixed inset-0 z-[200] flex min-h-0 flex-col outline-none motion-reduce:transition-none " +
+        "transition-[opacity,backdrop-filter] ease-out duration-200 motion-reduce:duration-150 " +
         (overlayVisible
-          ? "bg-black/92 opacity-100 backdrop-blur-[2px]"
+          ? "bg-zinc-950/95 opacity-100 backdrop-blur-[3px]"
           : "pointer-events-none opacity-0 backdrop-blur-none")
       }
-      onClick={onClose}
     >
-      <button
-        ref={closeButtonRef}
-        type="button"
-        aria-label="Close viewer"
-        className={`pointer-events-auto absolute right-4 top-4 z-10 flex h-10 w-10 cursor-pointer items-center justify-center rounded-sm text-zinc-500 hover:text-zinc-200 md:right-6 md:top-6 ${transitionQuick} ${linkFocusVisible} ${tapSoft}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
+      {/* No backdrop click-to-close — avoids accidental exits; Escape + close control remain */}
+      <header
+        className={
+          "flex shrink-0 items-center gap-2 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] " +
+          "sm:px-6 md:px-10 md:pb-4 lg:px-12"
+        }
       >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.25"
-          aria-hidden
-        >
-          <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
-        </svg>
-      </button>
-
-      {canPrev ? (
-        <button
-          type="button"
-          aria-label="Previous image"
-          className={`pointer-events-auto absolute left-2 top-1/2 z-10 -translate-y-1/2 cursor-pointer rounded-sm p-3 text-zinc-500 hover:text-zinc-200 md:left-4 ${transitionQuick} ${linkFocusVisible} ${tapSoft}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            goPrev();
-          }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" aria-hidden>
-            <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      ) : null}
-
-      {canNext ? (
-        <button
-          type="button"
-          aria-label="Next image"
-          className={`pointer-events-auto absolute right-2 top-1/2 z-10 -translate-y-1/2 cursor-pointer rounded-sm p-3 text-zinc-500 hover:text-zinc-200 md:right-4 ${transitionQuick} ${linkFocusVisible} ${tapSoft}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            goNext();
-          }}
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" aria-hidden>
-            <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      ) : null}
-
-      <div
-        className="pointer-events-auto flex max-h-[90vh] max-w-[90vw] cursor-zoom-out flex-col items-center justify-center"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div
-          className={
-            "transition-[opacity,transform] ease-out duration-[400ms] motion-reduce:duration-200 motion-reduce:transition-none " +
-            (overlayVisible
-              ? "scale-100 opacity-100 delay-[60ms] motion-reduce:scale-100 motion-reduce:opacity-100 motion-reduce:delay-0"
-              : "scale-[0.985] opacity-0 delay-0 motion-reduce:scale-100 motion-reduce:opacity-0")
-          }
-        >
-          <div className="relative isolate h-[90vh] max-h-[90vh] w-[90vw] max-w-[90vw] min-h-[160px] min-w-[200px]">
-            <div
-              className={
-                LAYER_TRANSITION +
-                (activeLayer === "a"
-                  ? " z-[2] opacity-100"
-                  : " z-[1] cursor-default opacity-0 pointer-events-none")
-              }
+        <div className="grid min-h-[2.75rem] w-full grid-cols-[1fr_auto_1fr] items-center gap-x-2 md:gap-x-4">
+          <div className="min-w-0 justify-self-start">
+            {titleTrimmed ? (
+              <p className="truncate text-left text-[11px] font-normal tracking-[0.02em] text-zinc-400 md:text-xs">
+                {titleTrimmed}
+              </p>
+            ) : null}
+          </div>
+          {showCounter ? (
+            <p
+              className="justify-self-center tabular-nums text-[11px] text-zinc-400 md:text-xs"
+              aria-live="polite"
             >
-              <Image
-                src={imgA.src}
-                alt=""
-                fill
-                sizes="90vw"
-                className="object-contain object-center"
-                style={{ objectPosition: imgA.objectPosition ?? "center" }}
-                draggable={false}
-              />
-            </div>
-            <div
-              className={
-                LAYER_TRANSITION +
-                (activeLayer === "b"
-                  ? " z-[2] opacity-100"
-                  : " z-[1] cursor-default opacity-0 pointer-events-none")
-              }
+              {clampedIndex + 1} / {count}
+            </p>
+          ) : (
+            <span className="justify-self-center" aria-hidden />
+          )}
+          <div className="justify-self-end">
+            <button
+              ref={closeButtonRef}
+              type="button"
+              aria-label="Close viewer"
+              className={`${glassCloseBtn} ${transitionQuick} ${linkFocusVisible} ${tapSoft}`}
+              onClick={onClose}
             >
-              <Image
-                src={imgB.src}
-                alt=""
-                fill
-                sizes="90vw"
-                className="object-contain object-center"
-                style={{ objectPosition: imgB.objectPosition ?? "center" }}
-                draggable={false}
-              />
-            </div>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.25"
+                aria-hidden
+              >
+                <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+              </svg>
+            </button>
           </div>
         </div>
+      </header>
 
-        {active.caption ? (
-          <p
-            className={`mt-5 max-w-xl px-2 text-center font-serif text-[13px] font-normal leading-relaxed tracking-[-0.01em] text-zinc-500 transition-opacity ease-out motion-reduce:transition-none ${
-              overlayVisible ? "opacity-100 delay-[95ms] motion-reduce:delay-0" : "opacity-0 delay-0"
-            }`}
-            style={{ transitionDuration: `${IMAGE_MOTION_MS}ms` }}
+      <div
+        className={
+          "relative flex min-h-0 flex-1 touch-pan-y flex-col px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] " +
+          "sm:px-5 md:px-8 lg:px-12"
+        }
+      >
+        <div className="relative flex min-h-0 flex-1 items-center justify-center">
+          {canPrev ? (
+            <button
+              type="button"
+              aria-label="Previous image"
+              className={`${glassNavBtn} left-[max(0.5rem,env(safe-area-inset-left))] md:left-4 lg:left-6 ${transitionQuick} ${linkFocusVisible} ${tapSoft}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                goPrev();
+              }}
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.25"
+                aria-hidden
+              >
+                <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          ) : null}
+
+          {canNext ? (
+            <button
+              type="button"
+              aria-label="Next image"
+              className={`${glassNavBtn} right-[max(0.5rem,env(safe-area-inset-right))] md:right-4 lg:right-6 ${transitionQuick} ${linkFocusVisible} ${tapSoft}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                goNext();
+              }}
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.25"
+                aria-hidden
+              >
+                <path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          ) : null}
+
+          <div
+            className="pointer-events-auto flex min-h-0 w-full max-w-[min(96vw,1440px)] flex-col items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+            role="presentation"
           >
-            {active.caption}
-          </p>
-        ) : null}
+            <div
+              className={
+                "w-full transition-[opacity,transform] ease-out duration-200 motion-reduce:transition-none " +
+                (overlayVisible
+                  ? "scale-100 opacity-100 delay-75 motion-reduce:scale-100 motion-reduce:opacity-100 motion-reduce:delay-0"
+                  : "scale-[0.99] opacity-0 delay-0 motion-reduce:scale-100 motion-reduce:opacity-0")
+              }
+            >
+              <div className={stageBoxClass}>
+                <div
+                  className={
+                    LAYER_TRANSITION +
+                    (activeLayer === "a"
+                      ? " z-[2] opacity-100"
+                      : " z-[1] cursor-default opacity-0 pointer-events-none")
+                  }
+                >
+                  <Image
+                    src={imgA.src}
+                    alt=""
+                    fill
+                    sizes="(max-width: 768px) 96vw, 1440px"
+                    className="object-contain object-center"
+                    style={{ objectPosition: imgA.objectPosition ?? "center" }}
+                    draggable={false}
+                  />
+                </div>
+                <div
+                  className={
+                    LAYER_TRANSITION +
+                    (activeLayer === "b"
+                      ? " z-[2] opacity-100"
+                      : " z-[1] cursor-default opacity-0 pointer-events-none")
+                  }
+                >
+                  <Image
+                    src={imgB.src}
+                    alt=""
+                    fill
+                    sizes="(max-width: 768px) 96vw, 1440px"
+                    className="object-contain object-center"
+                    style={{ objectPosition: imgB.objectPosition ?? "center" }}
+                    draggable={false}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {active.caption ? (
+              <p
+                className={`mt-4 max-w-xl px-2 text-center font-serif text-[13px] font-normal leading-relaxed tracking-[-0.01em] text-zinc-500 transition-opacity ease-out motion-reduce:transition-none sm:mt-5 ${
+                  overlayVisible ? "opacity-100 delay-100 motion-reduce:delay-0" : "opacity-0 delay-0"
+                }`}
+                style={{ transitionDuration: `${IMAGE_MOTION_MS}ms` }}
+              >
+                {active.caption}
+              </p>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );

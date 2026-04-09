@@ -4,14 +4,14 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObje
 import { computeActiveSiteSectionId } from "@/lib/admin/site-settings-active-section";
 import { SITE_SECTION_IDS } from "@/lib/admin/site-sections";
 
+/** When refs are missing: align with mobile header + pill strip (incl. sticky `pt-3`) + offset. */
 function fallbackMobileTargetLinePx(): number {
   if (typeof window === "undefined") {
-    return 140;
+    return 156;
   }
-  const mql = window.matchMedia("(min-width: 640px)");
-  const headerBand = mql.matches ? 64 : 56;
-  const navBand = 52;
-  const gap = 24;
+  const headerBand = 60;
+  const navBand = 68;
+  const gap = 28;
   return headerBand + navBand + gap;
 }
 

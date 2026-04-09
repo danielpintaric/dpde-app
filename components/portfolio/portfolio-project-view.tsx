@@ -113,6 +113,7 @@ export function PortfolioProjectView({
           images={getPortfolioBodyImages(project)}
           clientDownload={galleryClientDownload}
           useClientSelection={clientSelectionMode}
+          galleryTitle={project.title}
         />
 
         <footer className="mt-20 border-t border-zinc-800/40 sm:mt-24 lg:mt-28">
