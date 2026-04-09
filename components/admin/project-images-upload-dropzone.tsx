@@ -169,32 +169,28 @@ export function ProjectImagesUploadDropzone({ projectId, projectSlug }: Props) {
         onDragLeave={onDragLeave}
         onDragOver={onDragOver}
         className={[
-          "relative cursor-pointer rounded-xl border border-dashed px-4 py-10 text-center transition-[border-color,background-color,box-shadow,opacity] duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950",
-          pending ? "pointer-events-none opacity-60" : "",
+          "relative cursor-pointer rounded-xl border border-dashed px-4 py-12 text-center transition-[border-color,background-color,box-shadow,opacity,transform] duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950",
+          pending ? "pointer-events-none opacity-70" : "",
           fileDragOver && !pending
-            ? "border-zinc-500/45 bg-zinc-900/45 shadow-[0_0_24px_-12px_rgba(0,0,0,0.45)]"
+            ? "border-zinc-500/50 bg-zinc-900/50 shadow-[0_0_28px_-10px_rgba(0,0,0,0.5)] scale-[1.01]"
             : "border-zinc-700/55 bg-zinc-950/40 hover:border-zinc-600/55 hover:bg-zinc-900/35",
         ].join(" ")}
       >
-        <p className="text-sm font-medium text-zinc-300">
-          Drop images here
+        <p className="text-sm font-medium text-zinc-200">
+          Drop photos here
           <span className="mx-2 text-zinc-600">·</span>
-          <span className="text-zinc-400">or click to browse</span>
+          <span className="text-zinc-400">or tap to add</span>
         </p>
-        <p className="mt-2 text-[11px] text-zinc-500">
-          JPEG, PNG, WebP, GIF, AVIF · multiple files ok
-        </p>
+        <p className="mt-2 text-[11px] text-zinc-500">JPEG, PNG, WebP, GIF, AVIF — several at once</p>
         {pending ? (
-          <p className="mt-3 text-[11px] font-medium tracking-wide text-zinc-400">
-            Uploading…
-          </p>
+          <div className="mx-auto mt-5 h-1 max-w-[200px] overflow-hidden rounded-full bg-zinc-800">
+            <div className="h-full w-full animate-pulse rounded-full bg-zinc-500/80" />
+          </div>
+        ) : null}
+        {pending ? (
+          <p className="mt-3 text-[11px] font-medium tracking-wide text-zinc-400">Uploading…</p>
         ) : null}
       </div>
-
-      <p className="mt-2 text-[10px] leading-relaxed text-zinc-600">
-        Storage: bucket <code className="text-zinc-500">project-images</code>, path{" "}
-        <code className="text-zinc-500">projects/{`{id}`}/original/</code>
-      </p>
     </div>
   );
 }

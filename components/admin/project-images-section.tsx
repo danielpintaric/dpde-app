@@ -28,8 +28,8 @@ export function ProjectImagesSection({
       <ProjectImagesSavedQueryStrip savedImageId={savedImageId} />
       <h2 className="mb-2 font-serif text-xl tracking-tight text-zinc-100">Images</h2>
       <p className={embedded ? "mb-5 text-sm leading-relaxed text-zinc-500" : "mb-6 text-sm text-zinc-500"}>
-        Upload, set cover, and edit caption, alt text, frame ratio, focal position, and sort. Legacy
-        rows with external URLs stay editable; storage delete only runs for bucket paths.
+        Arrange the shoot like a contact sheet: drag to reorder, star the cover, set focal points on
+        the tiles, and open details when you need copy or framing.
       </p>
 
       <ProjectImagesUploadDropzone projectId={project.id} projectSlug={project.slug} />

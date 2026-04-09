@@ -2,9 +2,13 @@
 
 import { useFormStatus } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { FocalPointPicker } from "@/components/admin/focal-point-picker";
 import { AdminSelect } from "@/components/admin/admin-select";
 import { editorSaveButtonPrimaryClass } from "@/components/admin/editor-save-button-styles";
-import { updateProjectImageDetailsAction } from "@/lib/actions/admin-image-actions";
+import {
+  updateProjectImageDetailsAction,
+  updateProjectImageDetailsMutation,
+} from "@/lib/actions/admin-image-actions";
 import { ADMIN_IMAGE_ASPECT_PRESETS } from "@/lib/constants/admin-image-aspects";
 import type { Image, Project } from "@/types/project";
 
@@ -13,6 +17,9 @@ type DetailsSnapshot = {
   altText: string;
   aspectClass: string;
   objectPosition: string;
+  focalX: string;
+  focalY: string;
+  imageFilterClass: string;
   sortOrder: string;
 };
 
@@ -27,6 +34,9 @@ function readSnapshot(form: HTMLFormElement): DetailsSnapshot {
     altText: String(fd.get("altText") ?? ""),
     aspectClass: String(fd.get("aspectClass") ?? ""),
     objectPosition: String(fd.get("objectPosition") ?? ""),
+    focalX: String(fd.get("focalX") ?? ""),
+    focalY: String(fd.get("focalY") ?? ""),
+    imageFilterClass: String(fd.get("imageFilterClass") ?? ""),
     sortOrder: String(fd.get("sortOrder") ?? ""),
   };
 }
@@ -37,6 +47,9 @@ function equalSnapshot(a: DetailsSnapshot, b: DetailsSnapshot): boolean {
     a.altText === b.altText &&
     a.aspectClass === b.aspectClass &&
     a.objectPosition === b.objectPosition &&
+    a.focalX === b.focalX &&
+    a.focalY === b.focalY &&
+    a.imageFilterClass === b.imageFilterClass &&
     a.sortOrder === b.sortOrder
   );
 }
@@ -78,6 +91,10 @@ type Props = {
   compact?: boolean;
   onDirtyChange?: (dirty: boolean) => void;
   onSavingChange?: (saving: boolean) => void;
+  /**
+   * Wenn gesetzt: „Save & next“ (Mutation ohne Redirect) – z. B. Batch-Review im Grid.
+   */
+  onSaveAndNext?: () => void | Promise<void>;
 };
 
 export function ProjectImageDetailsForm({
@@ -89,14 +106,19 @@ export function ProjectImageDetailsForm({
   compact = false,
   onDirtyChange,
   onSavingChange,
+  onSaveAndNext,
 }: Props) {
   const formRef = useRef<HTMLFormElement>(null);
   const captionRef = useRef<HTMLTextAreaElement>(null);
+  const [batchSaveError, setBatchSaveError] = useState<string | null>(null);
   const initialRef = useRef<DetailsSnapshot>({
     caption: image.caption ?? "",
     altText: image.altText ?? "",
     aspectClass: aspectValue,
     objectPosition: image.objectPosition ?? "",
+    focalX: typeof image.focalX === "number" ? String(image.focalX) : "",
+    focalY: typeof image.focalY === "number" ? String(image.focalY) : "",
+    imageFilterClass: image.imageFilterClass ?? "",
     sortOrder: String(image.sortOrder),
   });
   const [dirty, setDirty] = useState(false);
@@ -108,6 +130,9 @@ export function ProjectImageDetailsForm({
       altText: image.altText ?? "",
       aspectClass: aspectValue,
       objectPosition: image.objectPosition ?? "",
+      focalX: typeof image.focalX === "number" ? String(image.focalX) : "",
+      focalY: typeof image.focalY === "number" ? String(image.focalY) : "",
+      imageFilterClass: image.imageFilterClass ?? "",
       sortOrder: String(image.sortOrder),
     };
     initialRef.current = next;
@@ -122,6 +147,9 @@ export function ProjectImageDetailsForm({
     image.caption,
     image.altText,
     image.objectPosition,
+    image.focalX,
+    image.focalY,
+    image.imageFilterClass,
     image.sortOrder,
     aspectValue,
   ]);
@@ -144,6 +172,10 @@ export function ProjectImageDetailsForm({
   useEffect(() => {
     onDirtyChange?.(dirty);
   }, [dirty, onDirtyChange]);
+
+  useEffect(() => {
+    setBatchSaveError(null);
+  }, [image.id]);
 
   /** Nur bei echtem Bildwechsel — nicht bei Prop-Updates desselben `image.id` (z. B. Refresh). */
   useEffect(() => {
@@ -238,7 +270,8 @@ export function ProjectImageDetailsForm({
 
           <div className="mt-3 border-t border-zinc-800/40 pt-3">
             {sectionLabel("Framing")}
-            <div className="grid grid-cols-2 gap-x-2 gap-y-2">
+            <FocalPointPicker image={image} compact onFocalChange={syncDirty} />
+            <div className="mt-3 grid grid-cols-2 gap-x-2 gap-y-2">
               <div className="min-w-0">
                 <label htmlFor={`aspect-${image.id}`} className={cLabel}>
                   Aspect class
@@ -253,7 +286,7 @@ export function ProjectImageDetailsForm({
               </div>
               <div className="min-w-0">
                 <label htmlFor={`pos-${image.id}`} className={cLabel}>
-                  Object position
+                  Legacy position (CSS)
                 </label>
                 <input
                   id={`pos-${image.id}`}
@@ -261,7 +294,20 @@ export function ProjectImageDetailsForm({
                   type="text"
                   defaultValue={image.objectPosition ?? ""}
                   className={cInput}
-                  placeholder="e.g. center 30%"
+                  placeholder="if no focal: e.g. center 30%"
+                />
+              </div>
+              <div className="col-span-2 min-w-0">
+                <label htmlFor={`filter-${image.id}`} className={cLabel}>
+                  Filter classes (optional)
+                </label>
+                <input
+                  id={`filter-${image.id}`}
+                  name="imageFilterClass"
+                  type="text"
+                  defaultValue={image.imageFilterClass ?? ""}
+                  className={cInput}
+                  placeholder="e.g. brightness-[0.94] contrast-[1.03] — empty = default"
                 />
               </div>
             </div>
@@ -282,8 +328,36 @@ export function ProjectImageDetailsForm({
                   className={`${cInput} tabular-nums`}
                 />
               </div>
+              {batchSaveError ? (
+                <p className="mt-2 rounded border border-red-900/35 bg-red-950/30 px-2 py-1.5 text-[10px] leading-snug text-red-100/90">
+                  {batchSaveError}
+                </p>
+              ) : null}
               <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 border-t border-zinc-800/40 pt-2">
                 <SubmitDetailsButton dirty={dirty} compact={compact} />
+                {onSaveAndNext ? (
+                  <button
+                    type="button"
+                    className="rounded border border-zinc-700/80 bg-transparent px-2 py-1 text-[10px] font-medium text-zinc-400 transition-colors hover:border-zinc-600 hover:bg-zinc-900/50 hover:text-zinc-200"
+                    onClick={() => {
+                      void (async () => {
+                        const form = formRef.current;
+                        if (!form) return;
+                        setBatchSaveError(null);
+                        if (dirty) {
+                          const result = await updateProjectImageDetailsMutation(new FormData(form));
+                          if (!result.ok) {
+                            setBatchSaveError(result.error);
+                            return;
+                          }
+                        }
+                        await onSaveAndNext();
+                      })();
+                    }}
+                  >
+                    Save & next
+                  </button>
+                ) : null}
                 {savedVisible ? (
                   <span
                     role="status"
@@ -340,9 +414,10 @@ export function ProjectImageDetailsForm({
               options={aspectOptions}
             />
           </div>
+          <FocalPointPicker image={image} onFocalChange={syncDirty} />
           <div>
             <label htmlFor={`pos-${image.id}`} className={cLabel}>
-              Object position
+              Legacy position (CSS)
             </label>
             <input
               id={`pos-${image.id}`}
@@ -350,7 +425,20 @@ export function ProjectImageDetailsForm({
               type="text"
               defaultValue={image.objectPosition ?? ""}
               className={cInput}
-              placeholder="e.g. center 30% 50%"
+              placeholder="if no focal: e.g. center 30% 50%"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor={`filter-${image.id}`} className={cLabel}>
+              Filter classes (optional)
+            </label>
+            <input
+              id={`filter-${image.id}`}
+              name="imageFilterClass"
+              type="text"
+              defaultValue={image.imageFilterClass ?? ""}
+              className={cInput}
+              placeholder="e.g. brightness-[0.94] contrast-[1.03] — empty = default"
             />
           </div>
           <div>

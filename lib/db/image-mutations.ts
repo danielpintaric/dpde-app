@@ -69,6 +69,9 @@ export async function insertUploadedImageRow(input: {
       external_url: null,
       aspect_class: DEFAULT_UPLOAD_ASPECT_CLASS,
       object_position: null,
+      focal_x: null,
+      focal_y: null,
+      image_filter_class: null,
     })
     .select("*")
     .single();
@@ -137,6 +140,9 @@ export async function updateImageMetadataDb(
     altText: string | null;
     aspectClass: string;
     objectPosition: string | null;
+    focalX: number | null;
+    focalY: number | null;
+    imageFilterClass: string | null;
     sortOrder: number;
   },
 ): Promise<Image> {
@@ -149,6 +155,9 @@ export async function updateImageMetadataDb(
       alt_text: input.altText,
       aspect_class: aspect,
       object_position: input.objectPosition,
+      focal_x: input.focalX,
+      focal_y: input.focalY,
+      image_filter_class: input.imageFilterClass,
       sort_order: input.sortOrder,
     })
     .eq("id", imageId)

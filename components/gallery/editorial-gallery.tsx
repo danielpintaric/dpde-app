@@ -15,17 +15,38 @@ const gridGap = "grid grid-cols-2 gap-5 sm:gap-6 md:grid-cols-3 md:gap-6 lg:gap-
 const gridSizes =
   "(min-width: 1024px) 22vw, (min-width: 768px) 30vw, (min-width: 640px) 45vw, 50vw";
 
+function resolveLightboxIndexForGridImage(
+  gridImages: ProjectImage[],
+  gridIndex: number,
+  lightboxImages: ProjectImage[],
+): number {
+  const body = gridImages[gridIndex];
+  if (!body) return 0;
+  const idx = lightboxImages.findIndex((im) =>
+    im.imageId && body.imageId
+      ? im.imageId === body.imageId
+      : im.src === body.src,
+  );
+  return idx >= 0 ? idx : 0;
+}
+
 type EditorialGalleryProps = {
   images: ProjectImage[];
+  /**
+   * Full sequence for the lightbox (e.g. cover first). Defaults to `images` when omitted.
+   * Grid still uses `images` only — map open index with this list.
+   */
+  lightboxImages?: ProjectImage[];
   clientDownload?: { token: string; projectSlug: string };
   /** When true, show selection controls (requires ClientSelectionProvider on the page). */
   useClientSelection?: boolean;
-  /** Shown quietly in the lightbox header */
+  /** Shown quietly in the lightbox bottom bar */
   galleryTitle?: string;
 };
 
 export function EditorialGallery({
   images,
+  lightboxImages,
   clientDownload,
   useClientSelection = false,
   galleryTitle,
@@ -49,10 +70,15 @@ export function EditorialGallery({
     }
   }, [selection]);
 
-  const openAt = useCallback((index: number) => {
-    setLightboxIndex(index);
-    setLightboxOpen(true);
-  }, []);
+  const lbImages = lightboxImages ?? images;
+
+  const openAt = useCallback(
+    (gridIndex: number) => {
+      setLightboxIndex(resolveLightboxIndexForGridImage(images, gridIndex, lbImages));
+      setLightboxOpen(true);
+    },
+    [images, lbImages],
+  );
 
   const closeLightbox = useCallback(() => {
     setLightboxOpen(false);
@@ -135,7 +161,7 @@ export function EditorialGallery({
       </section>
 
       <Lightbox
-        images={images}
+        images={lbImages}
         open={lightboxOpen}
         activeIndex={lightboxIndex}
         onActiveIndexChange={setLightboxIndex}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { scrollbarHiddenHorizontal } from "@/lib/editorial";
 import type { SiteSectionId } from "@/lib/admin/site-sections";
 
 export type SiteSettingsSectionItem = { id: SiteSectionId; label: string };
@@ -10,9 +11,6 @@ const pillBaseClass =
 
 const pillInactiveClass = `${pillBaseClass} border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:bg-zinc-900/60 hover:text-zinc-200`;
 const pillActiveClass = `${pillBaseClass} border-zinc-600 bg-zinc-800/90 text-zinc-100 shadow-sm shadow-black/20 ring-1 ring-white/5`;
-
-const scrollH =
-  "[scrollbar-width:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0";
 
 type Props = {
   sections: readonly SiteSettingsSectionItem[];
@@ -46,7 +44,7 @@ export function SiteSettingsMobileNav({ sections, activeSectionId }: Props) {
         Horizontal scroll on an inner strip only — avoids overflow-x-auto forcing overflow-y
         to clip active pill rings / tops against the sticky wrapper edge.
       */}
-      <div className={`overflow-x-auto py-0.5 ${scrollH}`}>
+      <div className={`overflow-x-auto py-0.5 ${scrollbarHiddenHorizontal}`}>
         <div className="flex min-w-max gap-2">
           {sections.map(({ id, label }) => {
             const isActive = activeSectionId === id;

@@ -1,21 +1,23 @@
 import Image from "next/image";
 import type { ProjectImage } from "@/lib/portfolio-data";
+import { resolveProjectImageObjectPosition } from "@/lib/image-object-position";
 import { ClientImageActions } from "@/components/gallery/client-image-actions";
 import { GalleryHoverLoupe } from "@/components/gallery/gallery-hover-loupe";
 import {
-  editorialImage,
+  defaultImageToneClasses,
+  editorialImageMotion,
   editorialImageOverlay,
-  galleryGridImage,
+  galleryGridImageBase,
+  galleryTileMediaOverlay,
+  galleryTileShell,
   linkFocusVisible,
   tapSoft,
   transitionImageHover,
   typeCaption,
 } from "@/lib/editorial";
 
-const gridCardShell =
-  "rounded-xl border bg-zinc-900 transition-all duration-200 hover:border-zinc-700 hover:scale-[1.01]";
 const gridCardBorderDefault = "border-zinc-800/60";
-const gridCardBorderSelected = "border-zinc-600";
+const gridCardBorderSelected = "border-zinc-600/95";
 
 export type GalleryFrameProps = {
   image: ProjectImage;
@@ -51,17 +53,18 @@ export function GalleryFrame({
   selected = false,
 }: GalleryFrameProps) {
   const ratio = aspectClass ?? image.aspectClass;
-  const objectPosition = image.objectPosition ?? "center";
+  const objectPosition = resolveProjectImageObjectPosition(image);
   const isGrid = variant === "grid";
 
   const borderClass = isGrid
-    ? `${gridCardShell} ${selected ? gridCardBorderSelected : gridCardBorderDefault}`
+    ? `${galleryTileShell} ${selected ? gridCardBorderSelected : gridCardBorderDefault}`
     : "";
 
-  const mediaClasses = isGrid ? galleryGridImage : editorialImage;
-  const overlayClasses = isGrid
-    ? "pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-200 group-hover:bg-black/10"
-    : editorialImageOverlay;
+  const tone = image.imageFilterClass?.trim() || defaultImageToneClasses;
+  const mediaClasses = isGrid
+    ? `${galleryGridImageBase} ${tone}`
+    : `object-cover ${tone} ${editorialImageMotion}`;
+  const overlayClasses = isGrid ? galleryTileMediaOverlay : editorialImageOverlay;
 
   const media = (
     <>
@@ -78,7 +81,7 @@ export function GalleryFrame({
     </>
   );
 
-  const interactiveTransition = isGrid ? "transition-all duration-200" : transitionImageHover;
+  const buttonMotion = isGrid ? "" : transitionImageHover;
 
   return (
     <figure className={`group ${className}`}>
@@ -87,12 +90,12 @@ export function GalleryFrame({
           type="button"
           onClick={onOpen}
           aria-label="Open image larger"
-          className={`relative w-full origin-center overflow-hidden text-left ${ratio} cursor-zoom-in ${interactiveTransition} ${linkFocusVisible} ${tapSoft} ${borderClass} ${!isGrid ? "bg-zinc-900" : ""}`}
+          className={`relative w-full origin-center overflow-hidden text-left ${ratio} cursor-zoom-in ${buttonMotion} ${linkFocusVisible} ${tapSoft} ${borderClass} ${!isGrid ? "bg-zinc-900" : ""}`}
         >
           {media}
           {selected && isGrid ? (
             <span
-              className="pointer-events-none absolute right-2 top-2 z-[3] flex h-5 w-5 items-center justify-center rounded-full border border-zinc-500/70 bg-zinc-950/80 text-[10px] text-zinc-200"
+              className="pointer-events-none absolute right-2 top-2 z-[3] flex h-5 w-5 items-center justify-center rounded-full border border-zinc-500/55 bg-zinc-950/75 text-[10px] text-zinc-200/95 shadow-sm transition-[opacity,border-color] duration-200 ease-out"
               aria-hidden
             >
               ✓

@@ -20,6 +20,7 @@ import {
   typeMeta,
 } from "@/lib/editorial";
 /** Data: {@link loadWorkPortfolioProjects} → public Supabase (no session cookies). */
+import { coverProjectImage, resolveProjectImageObjectPosition } from "@/lib/image-object-position";
 import { loadWorkPortfolioProjects } from "@/lib/services/portfolio-view-data";
 
 export const metadata: Metadata = {
@@ -69,7 +70,12 @@ export default async function PortfolioPage() {
               </div>
             ) : (
               <ul className="grid list-none grid-cols-1 gap-x-6 gap-y-12 p-0 m-0 sm:grid-cols-2 sm:gap-y-14 lg:gap-x-8 lg:gap-y-16">
-                {projects.map((project) => (
+                {projects.map((project) => {
+                  const cover = coverProjectImage(project);
+                  const thumbPos = cover
+                    ? resolveProjectImageObjectPosition(cover)
+                    : "50% 50%";
+                  return (
                   <li key={project.slug}>
                     <Link
                       href={`/portfolio/${project.slug}`}
@@ -81,6 +87,7 @@ export default async function PortfolioPage() {
                             src={project.coverImage}
                             alt=""
                             className={`absolute inset-0 h-full w-full ${galleryGridImage}`}
+                            style={{ objectPosition: thumbPos }}
                             sizes="(min-width: 1024px) 30vw, 50vw"
                             loading="lazy"
                           />
@@ -102,7 +109,8 @@ export default async function PortfolioPage() {
                       </div>
                     </Link>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </div>

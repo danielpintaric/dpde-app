@@ -8,8 +8,13 @@ export type ProjectImage = {
   /** Tailwind aspect utility, e.g. aspect-[16/10] */
   aspectClass: string;
   caption?: string;
+  /** 0–100; both set → preferred over {@link objectPosition} for cropping */
+  focalX?: number;
+  focalY?: number;
   /** CSS object-position for editorial crop */
   objectPosition?: string;
+  /** Optional Tailwind filter classes replacing the default tone (e.g. brightness/contrast). */
+  imageFilterClass?: string;
   /** DB `images.id` when loaded from Supabase (client downloads). */
   imageId?: string;
   /** False when `external_url` is set — no bucket file to download. */
@@ -507,6 +512,28 @@ export function getPortfolioBodyImages(project: PortfolioProject): ProjectImage[
   const [head, ...tail] = images;
   if (head.src === coverImage) return tail;
   return images;
+}
+
+/**
+ * Lightbox order: cover first (if identified), then the rest without duplicating.
+ * Same set as {@link PortfolioProject.images}, only reordered.
+ */
+export function getLightboxImages(project: PortfolioProject): ProjectImage[] {
+  const { images, coverImage, coverImageId } = project;
+  if (images.length === 0) return [];
+  let coverIdx = -1;
+  if (coverImageId) {
+    coverIdx = images.findIndex((i) => i.imageId === coverImageId);
+  }
+  if (coverIdx < 0) {
+    coverIdx = images.findIndex((i) => i.src === coverImage);
+  }
+  if (coverIdx < 0 || coverIdx === 0) {
+    return images;
+  }
+  const cover = images[coverIdx]!;
+  const rest = images.filter((_, i) => i !== coverIdx);
+  return [cover, ...rest];
 }
 
 export function getAdjacentProjects(slug: string): {

@@ -17,7 +17,12 @@ import {
   typeH1Page,
   typeMeta,
 } from "@/lib/editorial";
-import { getPortfolioBodyImages, type PortfolioProject } from "@/lib/portfolio-data";
+import {
+  getLightboxImages,
+  getPortfolioBodyImages,
+  type PortfolioProject,
+} from "@/lib/portfolio-data";
+import { resolveProjectImageObjectPosition } from "@/lib/image-object-position";
 
 export type PortfolioProjectViewProps = {
   project: PortfolioProject;
@@ -60,6 +65,9 @@ export function PortfolioProjectView({
   const coverAsset = project.coverImageId
     ? project.images.find((im) => im.imageId === project.coverImageId)
     : project.images[0];
+  const coverObjectPosition = coverAsset
+    ? resolveProjectImageObjectPosition(coverAsset)
+    : "50% 50%";
   const showCoverDownload =
     galleryClientDownload &&
     coverAsset?.imageId &&
@@ -90,6 +98,7 @@ export function PortfolioProjectView({
               alt=""
               fill
               className={`${editorialImageTone}`}
+              style={{ objectPosition: coverObjectPosition }}
               sizes="100vw"
               priority
             />
@@ -111,6 +120,7 @@ export function PortfolioProjectView({
 
         <EditorialGallery
           images={getPortfolioBodyImages(project)}
+          lightboxImages={getLightboxImages(project)}
           clientDownload={galleryClientDownload}
           useClientSelection={clientSelectionMode}
           galleryTitle={project.title}

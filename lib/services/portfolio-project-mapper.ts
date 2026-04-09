@@ -28,8 +28,15 @@ function catalogImageToProjectImage(img: Image): ProjectImage {
   if (img.caption) {
     row.caption = img.caption;
   }
+  if (typeof img.focalX === "number" && typeof img.focalY === "number") {
+    row.focalX = img.focalX;
+    row.focalY = img.focalY;
+  }
   if (img.objectPosition?.trim()) {
     row.objectPosition = img.objectPosition.trim();
+  }
+  if (img.imageFilterClass?.trim()) {
+    row.imageFilterClass = img.imageFilterClass.trim();
   }
   return row;
 }

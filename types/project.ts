@@ -44,4 +44,9 @@ export type Image = {
   externalUrl: string | null;
   aspectClass: string | null;
   objectPosition: string | null;
+  /** 0–100; both null = use {@link objectPosition} or center. */
+  focalX: number | null;
+  focalY: number | null;
+  /** Tailwind classes for brightness/contrast etc.; null = site default. */
+  imageFilterClass: string | null;
 };

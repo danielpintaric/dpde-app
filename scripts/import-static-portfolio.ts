@@ -182,6 +182,7 @@ async function main() {
           external_url: externalUrl,
           aspect_class: img.aspectClass,
           object_position: img.objectPosition ?? null,
+          image_filter_class: null,
         })
         .select("id")
         .single();

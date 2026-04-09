@@ -38,6 +38,11 @@ export type ImageRow = {
   external_url: string | null;
   aspect_class: string | null;
   object_position: string | null;
+  /** Present after migration `20260421120000_images_focal_point`. */
+  focal_x?: number | null;
+  focal_y?: number | null;
+  /** Present after migration `20260410120000_images_image_filter_class`. */
+  image_filter_class?: string | null;
 };
 
 function toVisibility(value: string): ProjectVisibility {
@@ -92,5 +97,8 @@ export function mapImageRow(row: ImageRow): Image {
     externalUrl: row.external_url,
     aspectClass: row.aspect_class,
     objectPosition: row.object_position,
+    focalX: row.focal_x ?? null,
+    focalY: row.focal_y ?? null,
+    imageFilterClass: row.image_filter_class ?? null,
   };
 }

@@ -2,7 +2,7 @@
 export function GalleryHoverLoupe() {
   return (
     <span
-      className="pointer-events-none absolute left-1/2 top-1/2 z-[2] -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+      className="pointer-events-none absolute left-1/2 top-1/2 z-[2] -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-[240ms] ease-out motion-reduce:transition-none group-hover:opacity-100"
       aria-hidden
     >
       <svg
@@ -10,7 +10,7 @@ export function GalleryHoverLoupe() {
         height="28"
         viewBox="0 0 24 24"
         fill="none"
-        className="text-zinc-100/90 drop-shadow-[0_1px_8px_rgba(0,0,0,0.45)]"
+        className="text-zinc-200/85 drop-shadow-[0_1px_10px_rgba(0,0,0,0.4)] transition-colors duration-[240ms] ease-out group-hover:text-zinc-100/90"
         stroke="currentColor"
         strokeWidth="1.25"
         strokeLinecap="round"

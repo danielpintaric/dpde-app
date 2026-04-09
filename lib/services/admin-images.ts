@@ -140,6 +140,9 @@ export type AdminImageDetailsInput = {
   altText: string | null;
   aspectClass: string;
   objectPosition: string | null;
+  focalX: number | null;
+  focalY: number | null;
+  imageFilterClass: string | null;
   sortOrder: number;
 };
 
@@ -162,6 +165,37 @@ export async function updateAdminImageDetails(
     altText: input.altText,
     aspectClass: aspect,
     objectPosition: input.objectPosition,
+    focalX: input.focalX,
+    focalY: input.focalY,
+    imageFilterClass: input.imageFilterClass,
     sortOrder: Math.trunc(input.sortOrder),
+  });
+}
+
+/** Updates only focal columns; keeps all other metadata from the current row. */
+export async function updateAdminImageFocalOnly(
+  projectId: string,
+  imageId: string,
+  focalX: number | null,
+  focalY: number | null,
+): Promise<void> {
+  const image = await getImageById(imageId);
+  if (!image || image.projectId !== projectId) {
+    throw new Error("Image not found for this project.");
+  }
+  if ((focalX === null) !== (focalY === null)) {
+    throw new Error("Invalid focal pair.");
+  }
+  const aspect =
+    image.aspectClass?.trim() || DEFAULT_UPLOAD_ASPECT_CLASS;
+  await updateImageMetadataDb(imageId, projectId, {
+    caption: image.caption,
+    altText: image.altText,
+    aspectClass: aspect,
+    objectPosition: image.objectPosition,
+    focalX,
+    focalY,
+    imageFilterClass: image.imageFilterClass,
+    sortOrder: image.sortOrder,
   });
 }

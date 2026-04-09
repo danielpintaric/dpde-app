@@ -23,6 +23,25 @@ export const transitionNav =
 export const transitionImageHover =
   "transition-transform duration-[550ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
 
+/** Calm ease shared by lightbox + grid thumbnails (no flashy motion) */
+export const galleryMotionEase = "ease-[cubic-bezier(0.22,1,0.36,1)]";
+
+/**
+ * Scrollbar visually hidden while overflow scroll stays active (mouse, trackpad, touch, `scrollIntoView`).
+ * Firefox: `scrollbar-width`; WebKit: `::-webkit-scrollbar`; legacy Edge: `-ms-overflow-style`.
+ */
+export const scrollbarHiddenHorizontal =
+  "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:[display:none]";
+
+/** Uniform grid / index tiles — border + lift + press (with `galleryMotionEase`) */
+export const galleryTileShell =
+  "rounded-xl border bg-zinc-900 transition-[transform,border-color,box-shadow] duration-[220ms] " +
+  `${galleryMotionEase} hover:border-zinc-700/85 hover:scale-[1.006] active:scale-[0.992] active:transition-[transform] active:duration-[160ms]`;
+
+/** Darkening overlay on grid thumbnails — smooth fade */
+export const galleryTileMediaOverlay =
+  "pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-[240ms] ease-out group-hover:bg-black/[0.07]";
+
 /** Header / shell morphs — calm fade band */
 export const transitionShell =
   "transition-[background-color,backdrop-filter,border-color] duration-[300ms] ease-out";
@@ -34,27 +53,34 @@ export const linkFocusVisible =
 /** Subtle tap feedback (links, text buttons) */
 export const tapSoft = "active:opacity-[0.9]";
 
+/** Default editorial tone (grid + inline); override per asset via `ProjectImage.imageFilterClass`. */
+export const defaultImageToneClasses = "brightness-[0.97] contrast-[1.02]";
+
+/** Editorial layout: motion only (pair with `defaultImageToneClasses` or a custom tone). */
+export const editorialImageMotion =
+  "transition-transform duration-[550ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]";
+
 /** Linkable / hoverable image blocks — transform-only hover, soft attack, gradual ease */
 export const editorialImage =
-  "object-cover brightness-[0.97] contrast-[1.02] transition-transform duration-[550ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]";
+  `object-cover ${defaultImageToneClasses} ${editorialImageMotion}`;
 
 /** Uniform grid cards: cover, no inner zoom (scale lives on the card wrapper). */
-export const galleryGridImage =
-  "h-full w-full object-cover brightness-[0.97] contrast-[1.02]";
+export const galleryGridImageBase = "h-full w-full object-cover";
+
+export const galleryGridImage = `${galleryGridImageBase} ${defaultImageToneClasses}`;
 
 /** Hero or static leads — same tone, no hover */
-export const editorialImageTone =
-  "object-cover brightness-[0.97] contrast-[1.02]";
+export const editorialImageTone = `object-cover ${defaultImageToneClasses}`;
 
 export const editorialImageOverlay =
   "pointer-events-none absolute inset-0 bg-zinc-950/[0.07]";
 
 /** Work / client index: project thumbnail as a calm gallery tile */
 export const portfolioIndexThumbShell =
-  "relative overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-900 transition-all duration-200 group-hover:border-zinc-700 group-hover:scale-[1.01]";
+  "relative overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-900 transition-[transform,border-color,box-shadow] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:border-zinc-700/85 group-hover:scale-[1.006] group-active:scale-[0.992]";
 export const portfolioIndexThumbAspect = "relative aspect-[4/5] w-full";
 export const portfolioIndexThumbMediaOverlay =
-  "pointer-events-none absolute inset-0 z-[1] bg-black/0 transition-colors duration-200 group-hover:bg-black/10";
+  "pointer-events-none absolute inset-0 z-[1] bg-black/0 transition-colors duration-[240ms] ease-out group-hover:bg-black/[0.07]";
 
 export const editorialFrame = `group relative block overflow-hidden bg-zinc-900 ${focusRing}`;
 
@@ -97,8 +123,7 @@ export const homeSectionKicker =
 export const homeApproachKicker = `${homeSectionKicker} normal-case`;
 
 /** Home tile images: gemeinsame Basis (Hover separat). */
-export const homeTileImageBase =
-  "object-cover brightness-[0.97] contrast-[1.02]";
+export const homeTileImageBase = `object-cover ${defaultImageToneClasses}`;
 
 /**
  * Home landing — nur Zoom (kein Hover-Filter); 800 ms, Kurve wie zuletzt als „genau richtig“.
