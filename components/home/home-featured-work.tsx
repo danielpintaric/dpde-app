@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   editorialFrameInteractive,
-  editorialImageOverlay,
   homeSectionKicker,
   homeTileCaptionStack,
   homeTileImageBase,
@@ -79,9 +78,7 @@ function FeaturedTileLead({
           className={`absolute inset-0 h-full w-full ${homeTileImageBase} ${homeTileImageHover}`}
           sizes={sizes}
           loading="eager"
-          fetchPriority="high"
         />
-        <div className={`${editorialImageOverlay} z-[1]`} aria-hidden />
         <div
           className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-zinc-950/65 via-zinc-950/14 to-transparent px-3 pb-3.5 pt-12 sm:px-4 sm:pb-4 sm:pt-14"
           aria-hidden
@@ -127,7 +124,6 @@ function FeaturedTileSupport({
           sizes={sizes}
           loading="lazy"
         />
-        <div className={`${editorialImageOverlay} z-[1]`} aria-hidden />
       </div>
       <div className={`${homeTileCaptionStack} max-w-[22ch]`}>
         <p className={homeTileTitle}>{title}</p>

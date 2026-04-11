@@ -4,10 +4,43 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
+
+function selectionStorageKey(token: string, projectSlug: string): string {
+  return `dpde:client-selection:${token}:${projectSlug}`;
+}
+
+function readStoredSelectionIds(token: string, projectSlug: string): string[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+  try {
+    const raw = localStorage.getItem(selectionStorageKey(token, projectSlug));
+    if (!raw) {
+      return [];
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter((x): x is string => typeof x === "string" && x.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+function mergeInitialSelection(serverIds: string[], token: string, projectSlug: string): Set<string> {
+  const fromServer = new Set(serverIds);
+  const fromLocal = readStoredSelectionIds(token, projectSlug);
+  if (fromLocal.length === 0) {
+    return fromServer;
+  }
+  return new Set([...fromServer, ...fromLocal]);
+}
 
 type ClientSelectionContextValue = {
   token: string;
@@ -34,7 +67,20 @@ export function ClientSelectionProvider({
   initialSelectedIds: string[];
   children: ReactNode;
 }) {
-  const [selected, setSelected] = useState(() => new Set(initialSelectedIds));
+  const [selected, setSelected] = useState(
+    () => mergeInitialSelection(initialSelectedIds, token, projectSlug),
+  );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        selectionStorageKey(token, projectSlug),
+        JSON.stringify([...selected]),
+      );
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }, [token, projectSlug, selected]);
 
   const toggle = useCallback(
     (imageId: string) => {

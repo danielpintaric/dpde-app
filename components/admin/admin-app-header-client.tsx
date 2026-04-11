@@ -77,7 +77,7 @@ export function AdminAppHeaderClient({ brandName }: Props) {
     <div className="lg:hidden" aria-hidden={!open}>
       <div
         className={
-          "fixed inset-0 z-[100] bg-black/65 backdrop-blur-[2px] transition-opacity duration-200 ease-out motion-reduce:transition-none " +
+          "fixed inset-0 z-[100] bg-zinc-950/90 transition-opacity duration-200 ease-out motion-reduce:transition-none " +
           (open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0")
         }
         aria-hidden
@@ -125,7 +125,7 @@ export function AdminAppHeaderClient({ brandName }: Props) {
     <>
       <header
         className={
-          "sticky top-0 border-b border-zinc-800/60 bg-zinc-950/95 pt-[env(safe-area-inset-top,0px)] shadow-[0_1px_0_rgba(0,0,0,0.35)] backdrop-blur-sm transition-[z-index] duration-200 " +
+          "sticky top-0 border-b border-zinc-800/60 bg-zinc-950/90 pt-[env(safe-area-inset-top,0px)] shadow-[0_1px_0_rgba(0,0,0,0.35)] transition-[z-index] duration-200 " +
           (open ? "z-[110]" : "z-50")
         }
       >
@@ -141,7 +141,7 @@ export function AdminAppHeaderClient({ brandName }: Props) {
           </Link>
           <button
             type="button"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900/80 text-zinc-300 outline-none transition-colors duration-200 hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 active:scale-[0.98]"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900/80 text-zinc-300 outline-none transition-colors duration-200 hover:border-zinc-700 hover:bg-zinc-800 hover:text-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
             aria-expanded={open}
             aria-controls={panelId}
             aria-label={open ? "Close menu" : "Open menu"}

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   editorialFrameInteractive,
-  editorialImageOverlay,
   homeSectionKicker,
   homeTileCaptionStack,
   homeTileImageBase,
@@ -67,7 +66,6 @@ export function HomeMoreWork({ items, className, sectionLabel }: Props) {
                       sizes="(min-width: 1280px) 24vw, (min-width: 768px) 40vw, 88vw"
                       loading="lazy"
                     />
-                    <div className={`${editorialImageOverlay} z-[1]`} aria-hidden />
                   </div>
                   <div className={homeTileCaptionStack}>
                     {hasMeta ? <p className={homeTileMeta}>{item.category}</p> : null}

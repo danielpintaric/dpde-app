@@ -31,7 +31,7 @@ export function AdminSaveBar({
   }`;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800/80 bg-zinc-900/80 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] backdrop-blur-md supports-[backdrop-filter]:bg-zinc-900/75 sm:px-6">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800/80 bg-zinc-950/90 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:px-6">
       <div className="pointer-events-auto mx-auto flex max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         <div className="min-w-0 flex-1" role={errorMessage ? "alert" : "status"}>
           {pending ? (

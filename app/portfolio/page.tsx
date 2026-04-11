@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { GalleryHoverLoupe } from "@/components/gallery/gallery-hover-loupe";
 import { PageMain } from "@/components/site-chrome";
 import {
   focusRing,
@@ -8,7 +7,6 @@ import {
   linkFocusVisible,
   pageContentShell,
   portfolioIndexThumbAspect,
-  portfolioIndexThumbMediaOverlay,
   portfolioIndexThumbShell,
   stackTitleToBody,
   tapSoft,
@@ -91,8 +89,6 @@ export default async function PortfolioPage() {
                             sizes="(min-width: 1024px) 30vw, 50vw"
                             loading="lazy"
                           />
-                          <div className={portfolioIndexThumbMediaOverlay} aria-hidden />
-                          <GalleryHoverLoupe />
                         </div>
                       </div>
                       <div className="mt-5 flex flex-col gap-1 sm:mt-6 sm:flex-row sm:items-baseline sm:justify-between">

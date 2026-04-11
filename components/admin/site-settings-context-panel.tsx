@@ -35,7 +35,7 @@ export function SiteSettingsContextPanel({ activeSectionId, className = "" }: Pr
 
         <div
           key={resolvedId}
-          className="site-settings-context-panel-body rounded-2xl border border-zinc-800/80 bg-zinc-950/60 p-5 shadow-sm shadow-black/20 backdrop-blur-sm sm:p-6"
+          className="site-settings-context-panel-body rounded-2xl border border-zinc-800/80 bg-zinc-950/90 p-5 shadow-sm shadow-black/20 sm:p-6"
         >
           <div className="space-y-5">
             <div className="space-y-2">

@@ -19,6 +19,12 @@ import {
   tapSoft,
   transitionQuick,
 } from "@/lib/editorial";
+import { ClientFavoriteLightboxButton } from "@/components/client/client-favorite-button";
+
+type LightboxFavoriteControl = {
+  active: boolean;
+  onToggle: () => void;
+};
 
 type LightboxProps = {
   images: ProjectImage[];
@@ -28,6 +34,8 @@ type LightboxProps = {
   onClose: () => void;
   /** Optional project title — shown quietly in the bottom bar when set */
   galleryTitle?: string;
+  /** Client selection: favorite toggle for the active slide (image must have imageId). */
+  favoriteControl?: LightboxFavoriteControl | null;
 };
 
 /** Unified lightbox rhythm (open, crossfade, thumbs) */
@@ -53,20 +61,18 @@ const layerOpacity =
 const closeBtnClass =
   "inline-flex min-h-[44px] min-w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-lg border border-zinc-600/22 " +
   "bg-zinc-950/18 text-zinc-400/80 opacity-[0.5] md:opacity-[0.36] " +
-  `transition-[opacity,color,background-color,border-color,transform] duration-[${LB_MS}ms] ` +
+  `transition-[opacity,color,background-color,border-color] duration-[${LB_MS}ms] ` +
   galleryMotionEase +
   " hover:opacity-100 hover:border-zinc-500/32 hover:bg-zinc-900/32 hover:text-zinc-200/95 " +
-  "active:scale-[0.97] active:transition-[transform] active:duration-150 " +
   "sm:min-h-0 sm:min-w-0 sm:h-9 sm:w-9 sm:rounded-md";
 
 const navArrowClass =
-  "pointer-events-auto absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 cursor-pointer items-center justify-center " +
+  "pointer-events-auto absolute top-[calc(50%-1.5rem)] z-20 hidden h-12 w-12 cursor-pointer items-center justify-center " +
   "rounded-full border border-zinc-600/20 bg-zinc-950/15 text-zinc-400/75 " +
   "opacity-[0.5] md:opacity-[0.34] " +
-  `transition-[opacity,transform,border-color,background-color,color] duration-[${LB_MS}ms] ` +
+  `transition-[opacity,border-color,background-color,color] duration-[${LB_MS}ms] ` +
   galleryMotionEase +
   " hover:opacity-100 hover:border-zinc-500/30 hover:bg-zinc-900/25 hover:text-zinc-300/90 " +
-  "active:scale-[0.96] active:opacity-100 " +
   "md:flex motion-reduce:transition-none";
 
 function useScrollLock(locked: boolean) {
@@ -99,7 +105,7 @@ function LightboxFillImage({
       fill
       sizes="95vw"
       onLoad={() => setReady(true)}
-      className={`object-contain object-center ${tone} transition-opacity duration-[200ms] motion-reduce:transition-none motion-reduce:opacity-100 ${galleryMotionEase} ${ready ? "opacity-100" : "opacity-0"}`}
+      className={`h-full w-full object-contain object-center ${tone} transition-opacity duration-[200ms] motion-reduce:transition-none motion-reduce:opacity-100 ${galleryMotionEase} ${ready ? "opacity-100" : "opacity-0"}`}
       style={{ objectPosition: objectPosition ?? "50% 50%" }}
       draggable={false}
     />
@@ -179,9 +185,9 @@ const LightboxThumbnailStrip = memo(function LightboxThumbnailStrip({
             aria-selected={active}
             aria-label={`Image ${i + 1}`}
             onClick={() => onSelect(i)}
-            className={`relative aspect-[4/5] w-14 shrink-0 snap-center overflow-hidden rounded-md border transition-[opacity,transform,border-color] duration-[200ms] sm:w-16 ${galleryMotionEase} ${
+            className={`relative aspect-[4/5] w-14 shrink-0 snap-center overflow-hidden rounded-md border transition-[opacity,border-color] duration-[200ms] sm:w-16 ${galleryMotionEase} ${
               active
-                ? "z-[1] scale-[1.05] border-zinc-200/75 opacity-100"
+                ? "z-[1] border-zinc-200/75 opacity-100"
                 : "border-transparent opacity-[0.68] hover:opacity-[0.82]"
             } ${linkFocusVisible} ${tapSoft}`}
           >
@@ -190,7 +196,7 @@ const LightboxThumbnailStrip = memo(function LightboxThumbnailStrip({
               alt=""
               fill
               sizes="64px"
-              className={`object-cover ${tone}`}
+              className={`h-full w-full object-cover ${tone}`}
               style={{ objectPosition: resolveProjectImageObjectPosition(img) }}
               draggable={false}
             />
@@ -208,6 +214,7 @@ export function Lightbox({
   onActiveIndexChange,
   onClose,
   galleryTitle,
+  favoriteControl,
 }: LightboxProps) {
   const [mounted, setMounted] = useState(false);
   const [overlayVisible, setOverlayVisible] = useState(false);
@@ -727,15 +734,15 @@ export function Lightbox({
   const showStrip = count > 1;
   const showCounter = count > 1;
   const titleTrimmed = galleryTitle?.trim();
+  const activeImageId = active?.imageId?.trim() ?? "";
+  const showFavoriteInLightbox = Boolean(favoriteControl && activeImageId);
 
   const entranceMotion = useMemo(
     () =>
-      "transition-[opacity,transform] duration-[200ms] motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:scale-100 " +
+      "transition-opacity duration-[200ms] motion-reduce:transition-none motion-reduce:opacity-100 " +
       galleryMotionEase +
       " " +
-      (overlayVisible
-        ? "scale-100 opacity-100"
-        : "scale-[0.989] opacity-0 motion-reduce:scale-100 motion-reduce:opacity-0"),
+      (overlayVisible ? "opacity-100" : "opacity-0 motion-reduce:opacity-0"),
     [overlayVisible],
   );
 
@@ -777,6 +784,14 @@ export function Lightbox({
       style={{ transitionDuration: `${OVERLAY_MS}ms` }}
       onClick={handleBackdropClose}
     >
+      {showFavoriteInLightbox && favoriteControl ? (
+        <ClientFavoriteLightboxButton
+          filled={favoriteControl.active}
+          label={favoriteControl.active ? "Remove from favorites" : "Add to favorites"}
+          onToggle={favoriteControl.onToggle}
+        />
+      ) : null}
+
       <button
         ref={closeButtonRef}
         type="button"
@@ -880,7 +895,7 @@ export function Lightbox({
               onClick={onClickImage}
             >
               <div
-                className="relative h-full min-h-0 w-full will-change-transform motion-reduce:transition-none"
+                className="relative h-full min-h-0 w-full motion-reduce:transition-none"
                 style={{
                   transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
                   transformOrigin: "center center",
@@ -947,7 +962,7 @@ export function Lightbox({
 
         {showStrip ? (
           <div
-            className="relative z-20 shrink-0 border-t border-zinc-800/22 bg-zinc-950/68 backdrop-blur-[6px]"
+            className="relative z-20 shrink-0 border-t border-zinc-800/22 bg-zinc-950/90"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex w-full justify-center px-4 pt-1 mt-4 sm:mt-5 pb-[max(1rem,env(safe-area-inset-bottom))]">

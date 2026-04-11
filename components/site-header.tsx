@@ -90,8 +90,9 @@ export function SiteHeader({ site }: SiteHeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  /** Small threshold so the bar firms up as soon as content begins to pass underneath. */
   const onScroll = useCallback(() => {
-    setScrolled(window.scrollY > 12);
+    setScrolled(window.scrollY > 8);
   }, []);
 
   useEffect(() => {
@@ -135,8 +136,8 @@ export function SiteHeader({ site }: SiteHeaderProps) {
     <header
       className={`fixed inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top,0px)] ${transitionShell} ${
         scrolled || menuOpen
-          ? "border-b border-zinc-800/60 bg-zinc-950/88 backdrop-blur-xl"
-          : "border-b border-transparent bg-zinc-950/25 backdrop-blur-[2px]"
+          ? "border-b border-zinc-800/60 bg-zinc-950/90"
+          : "border-b border-zinc-800/35 bg-zinc-950/90"
       }`}
     >
       <div className="px-6 sm:px-10 lg:px-16">
@@ -144,8 +145,8 @@ export function SiteHeader({ site }: SiteHeaderProps) {
           <Link
             href={logoHomeHref}
             onClick={onLogoClick}
-            className={`shrink-0 font-serif text-[1.125rem] font-normal leading-none tracking-[-0.03em] text-zinc-100 transition-[opacity,transform] duration-[300ms] ease-out hover:opacity-[0.92] ${linkFocusVisible} sm:text-[1.25rem] ${
-              showLogo ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-0.5 opacity-0"
+            className={`shrink-0 font-serif text-[1.125rem] font-normal leading-none tracking-[-0.03em] text-zinc-100 transition-opacity duration-[300ms] ease-out hover:opacity-[0.92] ${linkFocusVisible} sm:text-[1.25rem] ${
+              showLogo ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
             } ${site.logoImageUrl ? "inline-flex max-w-[min(200px,55vw)] items-center" : ""}`}
             tabIndex={showLogo ? undefined : -1}
           >
@@ -195,7 +196,7 @@ export function SiteHeader({ site }: SiteHeaderProps) {
       {menuOpen ? (
         <div
           id="mobile-nav"
-          className="border-b border-zinc-800/50 bg-zinc-950/94 px-6 pb-10 pt-6 backdrop-blur-xl sm:px-10 lg:px-16 md:hidden"
+          className="border-b border-zinc-800/50 bg-zinc-950/90 px-6 pb-10 pt-6 sm:px-10 lg:px-16 md:hidden"
         >
           <nav className="mx-auto w-full max-w-7xl" aria-label="Main mobile">
             <ul className="flex flex-col gap-8">

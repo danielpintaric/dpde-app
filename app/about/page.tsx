@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { PageMain } from "@/components/site-chrome";
 import {
   editorialImageTone,
-  editorialImageOverlay,
   pageContentShell,
   stackMetaToTitle,
   stackTitleToBody,
@@ -55,7 +54,6 @@ export default function AboutPage() {
                 className={`absolute inset-0 h-full w-full ${editorialImageTone} object-cover object-[center_45%]`}
                 sizes="(min-width: 1024px) 45vw, 100vw"
               />
-              <div className={editorialImageOverlay} aria-hidden />
             </div>
             <div className="space-y-12 lg:space-y-14 lg:pt-2">
               <div>

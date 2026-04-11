@@ -182,7 +182,7 @@ export function FocalPointModal({
       <button
         type="button"
         aria-label="Close"
-        className="absolute inset-0 bg-black/72 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-zinc-950/90"
         onClick={onClose}
       />
       <div

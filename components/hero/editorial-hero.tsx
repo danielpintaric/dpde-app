@@ -13,12 +13,10 @@ import {
 const DEFAULT_SLIDE_INTERVAL_MS = 8000;
 const CROSSFADE_MS = 1000;
 
-const heroImgClassName =
-  "object-cover object-[center_42%] brightness-[0.92] contrast-[1.04] sm:brightness-[0.88] sm:contrast-[1.06]";
+const heroImgClassName = "object-cover object-[center_42%]";
 
 /** Same shell for both crossfade layers — only opacity differs during the fade. */
-const crossfadeLayerShell =
-  "pointer-events-none absolute inset-0 overflow-hidden [transform:translateZ(0)] [backface-visibility:hidden]";
+const crossfadeLayerShell = "pointer-events-none absolute inset-0 overflow-hidden";
 
 const crossfadeImgClassName = `absolute inset-0 h-full w-full max-w-none ${heroImgClassName}`;
 
@@ -33,10 +31,6 @@ const heroReadabilityOverlayStyle: CSSProperties = {
     "linear-gradient(to right, rgb(0 0 0 / 0.32) 0%, rgb(0 0 0 / 0.09) 38%, rgb(0 0 0 / 0) 72%)",
   ].join(", "),
 };
-
-/** Tiled fractal noise — breaks up gradient banding; keep opacity tiny (no visible grain). */
-const HERO_NOISE_TILE =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
 
 function subscribeReducedMotion(onStoreChange: () => void) {
   const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -285,7 +279,6 @@ export function EditorialHero({
                   width={1920}
                   height={1080}
                   decoding="async"
-                  fetchPriority="high"
                   draggable={false}
                   className={crossfadeImgClassName}
                 />
@@ -302,7 +295,6 @@ export function EditorialHero({
                   width={1920}
                   height={1080}
                   decoding="async"
-                  fetchPriority="low"
                   draggable={false}
                   className={crossfadeImgClassName}
                 />
@@ -317,7 +309,6 @@ export function EditorialHero({
                 width={1920}
                 height={1080}
                 decoding="async"
-                fetchPriority="high"
                 draggable={false}
                 className={`absolute inset-0 h-full w-full max-w-none ${heroImgClassName}`}
               />
@@ -330,18 +321,9 @@ export function EditorialHero({
         style={heroReadabilityOverlayStyle}
         aria-hidden
       />
-      <div
-        className="pointer-events-none absolute inset-0 z-[2] opacity-[0.022] mix-blend-soft-light"
-        style={{
-          backgroundImage: `url("${HERO_NOISE_TILE}")`,
-          backgroundRepeat: "repeat",
-          backgroundSize: "256px 256px",
-        }}
-        aria-hidden
-      />
       {/*
         Soft hand-off to page background: ~¼ Hero-Höhe, nach oben transparent — liest sich mit Selected Work als ein Fluss.
-        Unter Hero-Text (z-10), über Bild/Noise.
+        Unter Hero-Text (z-10), über Bild.
       */}
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-[min(28%,12rem)] bg-gradient-to-t from-zinc-950 from-[35%] via-zinc-950/55 via-[55%] to-transparent sm:h-[min(26%,11rem)] lg:h-[min(24%,12rem)]"

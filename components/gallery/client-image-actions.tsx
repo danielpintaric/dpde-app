@@ -5,6 +5,7 @@ import {
   buildClientImageDownloadHref,
   downloadClientImageViaFetch,
 } from "@/lib/client-download-link";
+import { ClientFavoriteStarIcon } from "@/components/client/client-favorite-button";
 import {
   linkFocusVisible,
   tapSoft,
@@ -89,18 +90,11 @@ export function ClientImageActions({
         <button
           type="button"
           aria-pressed={selected}
-          aria-label={selected ? "Remove from selection" : "Add to selection"}
+          aria-label={selected ? "Remove from favorites" : "Add to favorites"}
           onClick={() => selectionCtx.toggle(imageId)}
-          className={`inline-flex items-center gap-1.5 rounded-sm text-zinc-500 ${transitionQuick} hover:text-zinc-300 ${linkFocusVisible} ${tapSoft} ${selected ? "text-zinc-300" : ""}`}
+          className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-zinc-700/40 bg-zinc-950/78 p-2 text-amber-200/85 ${transitionQuick} hover:border-zinc-600/50 hover:text-amber-100 ${linkFocusVisible} ${tapSoft} ${selected ? "border-amber-200/35 text-amber-100" : ""}`}
         >
-          <span
-            className="inline-block h-3 w-3 rounded-full border border-current"
-            style={{
-              boxShadow: selected ? "inset 0 0 0 5px currentColor" : "none",
-            }}
-            aria-hidden
-          />
-          <span className="tracking-[0.06em]">{selected ? "Selected" : "Select"}</span>
+          <ClientFavoriteStarIcon filled={selected} className="h-[1.05rem] w-[1.05rem]" />
         </button>
       ) : null}
     </p>

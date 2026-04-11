@@ -10,7 +10,7 @@
 
 /** Sticky Site Settings pill wrapper — `max-lg` only. Inner `pt-3` clears pills from the header edge. */
 export const adminSiteSettingsStickyPillClass =
-  "sticky top-[calc(env(safe-area-inset-top,0px)+3.75rem)] z-40 col-span-full -mx-4 border-b border-zinc-800/80 bg-zinc-950/80 pt-3 backdrop-blur-md supports-[backdrop-filter]:bg-zinc-950/75 sm:-mx-6 lg:hidden";
+  "sticky top-[calc(env(safe-area-inset-top,0px)+3.75rem)] z-40 col-span-full -mx-4 border-b border-zinc-800/80 bg-zinc-950/90 pt-3 sm:-mx-6 lg:hidden";
 
 /** `AdminSection` scroll-margin: mobile = safe + header + pill strip (incl. pt-3) + gap; lg+ unchanged. */
 export const adminSectionScrollMarginClass =

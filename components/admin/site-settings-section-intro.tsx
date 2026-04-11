@@ -13,7 +13,7 @@ export function SiteSettingsSectionIntro({ activeSectionId, className = "" }: Pr
 
   return (
     <div
-      className={`mb-8 max-w-[520px] rounded-2xl border border-zinc-800/80 bg-gradient-to-b from-zinc-900/60 to-zinc-950/30 px-6 py-6 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm ${className}`.trim()}
+      className={`mb-8 max-w-[520px] rounded-2xl border border-zinc-800/80 bg-zinc-950/90 px-6 py-6 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] ${className}`.trim()}
     >
       <div key={resolvedId} className="site-settings-section-intro-inner space-y-2">
         <p className="mb-2 text-[11px] uppercase tracking-[0.12em] text-zinc-500">

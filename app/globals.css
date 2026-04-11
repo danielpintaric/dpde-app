@@ -18,15 +18,20 @@ body {
   color: var(--foreground);
 }
 
+/* Compositor stability: avoid inherited filter/transform quirks on root (children may still transform). */
+html,
+body {
+  transform: none !important;
+  filter: none !important;
+}
+
 /* Projekt-Editor: dezenter „All saved“-Eintritt (nur visuell) */
 @keyframes editor-saved-enter {
   from {
     opacity: 0.4;
-    transform: translateY(0.125rem);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -38,11 +43,9 @@ body {
 @keyframes site-settings-context-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

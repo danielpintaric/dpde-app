@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import NextImage from "next/image";
 import Link from "next/link";
-import { GalleryHoverLoupe } from "@/components/gallery/gallery-hover-loupe";
 import { PageMain } from "@/components/site-chrome";
 import {
   focusRing,
@@ -9,7 +8,6 @@ import {
   linkFocusVisible,
   pageContentShell,
   portfolioIndexThumbAspect,
-  portfolioIndexThumbMediaOverlay,
   portfolioIndexThumbShell,
   stackTitleToBody,
   tapSoft,
@@ -134,7 +132,7 @@ export default async function ClientTokenPage({ searchParams }: PageProps) {
             </p>
           ) : null}
 
-          <div className="mx-auto mt-12 max-w-6xl sm:mt-14 lg:mt-20">
+          <div className="mx-auto mt-10 max-w-6xl border-t border-zinc-800/40 pt-10 sm:mt-12 sm:pt-12 lg:mt-14 lg:pt-14">
             {projects.length === 0 ? (
               <div className="rounded-xl border border-dashed border-zinc-800/55 bg-zinc-900/35 px-8 py-16 text-center sm:py-20">
                 <p className="font-serif text-base tracking-tight text-zinc-300">No images yet</p>
@@ -159,11 +157,8 @@ export default async function ClientTokenPage({ searchParams }: PageProps) {
                             fill
                             className={`${galleryGridImage} object-center`}
                             sizes="(min-width: 1024px) 30vw, 50vw"
-                            priority={i === 0}
                             unoptimized
                           />
-                          <div className={portfolioIndexThumbMediaOverlay} aria-hidden />
-                          <GalleryHoverLoupe />
                         </div>
                       </div>
                       <div className="mt-5 flex flex-col gap-1 sm:mt-6 sm:flex-row sm:items-baseline sm:justify-between">

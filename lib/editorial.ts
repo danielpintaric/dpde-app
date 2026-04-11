@@ -19,9 +19,8 @@ export const transitionColorsQuick = "transition-colors duration-[170ms] ease-ou
 export const transitionNav =
   "transition-[color,opacity,text-decoration-color,text-underline-offset] duration-[175ms] ease-out";
 
-/** Gallery trigger wrapper — transform timing in sync with `editorialImage` (no extra hover layers) */
-export const transitionImageHover =
-  "transition-transform duration-[550ms] ease-[cubic-bezier(0.16,1,0.3,1)]";
+/** Gallery trigger wrapper — kept for API compatibility; no transform (GPU stability). */
+export const transitionImageHover = "";
 
 /** Calm ease shared by lightbox + grid thumbnails (no flashy motion) */
 export const galleryMotionEase = "ease-[cubic-bezier(0.22,1,0.36,1)]";
@@ -33,18 +32,44 @@ export const galleryMotionEase = "ease-[cubic-bezier(0.22,1,0.36,1)]";
 export const scrollbarHiddenHorizontal =
   "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:[display:none]";
 
-/** Uniform grid / index tiles — border + lift + press (with `galleryMotionEase`) */
+/** Uniform grid / index tiles — border only (no scale transforms). */
 export const galleryTileShell =
-  "rounded-xl border bg-zinc-900 transition-[transform,border-color,box-shadow] duration-[220ms] " +
-  `${galleryMotionEase} hover:border-zinc-700/85 hover:scale-[1.006] active:scale-[0.992] active:transition-[transform] active:duration-[160ms]`;
+  "rounded-xl border bg-zinc-900 transition-[border-color,box-shadow] duration-[220ms] " +
+  `${galleryMotionEase} hover:border-zinc-700/85`;
 
 /** Darkening overlay on grid thumbnails — smooth fade */
 export const galleryTileMediaOverlay =
   "pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-[240ms] ease-out group-hover:bg-black/[0.07]";
 
+/** Public portfolio grid — softer hover wash than client / selection tiles */
+export const galleryTileMediaOverlayPublic =
+  "pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-[320ms] ease-out group-hover:bg-black/[0.035]";
+
+/** Wide public feature tiles — even quieter wash (editorial, not “tool”) */
+export const galleryTileMediaOverlayPublicSoft =
+  "pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-[380ms] ease-out group-hover:bg-black/[0.022]";
+
+/**
+ * Support-column trio — light veil at rest; hover eases it for a touch more clarity (still behind the hero).
+ */
+export const galleryTileMediaOverlayPublicSupport =
+  "pointer-events-none absolute inset-0 bg-zinc-950/[0.026] transition-colors duration-[230ms] ease-out group-hover:bg-zinc-950/[0.007]";
+
+/** Public portfolio tile shell — no hover scale (compositor stability). */
+export const galleryTileShellPublic =
+  "rounded-xl border bg-zinc-900 transition-[border-color,box-shadow] duration-[260ms] " +
+  `${galleryMotionEase} hover:border-zinc-700/72`;
+
+/**
+ * Public editorial **support column** (vertical trio): border motion only.
+ */
+export const galleryTileShellPublicSupport =
+  "rounded-xl border bg-zinc-900 transition-[border-color,box-shadow] duration-[240ms] " +
+  `${galleryMotionEase} hover:border-zinc-700/52`;
+
 /** Header / shell morphs — calm fade band */
 export const transitionShell =
-  "transition-[background-color,backdrop-filter,border-color] duration-[300ms] ease-out";
+  "transition-[background-color,border-color] duration-[300ms] ease-out";
 
 /** Inline & nav links — keyboard focus without loud box */
 export const linkFocusVisible =
@@ -53,34 +78,28 @@ export const linkFocusVisible =
 /** Subtle tap feedback (links, text buttons) */
 export const tapSoft = "active:opacity-[0.9]";
 
-/** Default editorial tone (grid + inline); override per asset via `ProjectImage.imageFilterClass`. */
-export const defaultImageToneClasses = "brightness-[0.97] contrast-[1.02]";
+/** Default editorial tone — no CSS filter utilities (GPU stability). */
+export const defaultImageToneClasses = "";
 
-/** Editorial layout: motion only (pair with `defaultImageToneClasses` or a custom tone). */
-export const editorialImageMotion =
-  "transition-transform duration-[550ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]";
+/** Editorial layout: no inner image scale on hover. */
+export const editorialImageMotion = "";
 
-/** Linkable / hoverable image blocks — transform-only hover, soft attack, gradual ease */
+/** Linkable / hoverable image blocks */
 export const editorialImage =
-  `object-cover ${defaultImageToneClasses} ${editorialImageMotion}`;
+  `object-cover ${defaultImageToneClasses} ${editorialImageMotion}`.trim();
 
 /** Uniform grid cards: cover, no inner zoom (scale lives on the card wrapper). */
 export const galleryGridImageBase = "h-full w-full object-cover";
 
-export const galleryGridImage = `${galleryGridImageBase} ${defaultImageToneClasses}`;
+export const galleryGridImage = `${galleryGridImageBase} ${defaultImageToneClasses}`.trim();
 
 /** Hero or static leads — same tone, no hover */
-export const editorialImageTone = `object-cover ${defaultImageToneClasses}`;
-
-export const editorialImageOverlay =
-  "pointer-events-none absolute inset-0 bg-zinc-950/[0.07]";
+export const editorialImageTone = `object-cover ${defaultImageToneClasses}`.trim();
 
 /** Work / client index: project thumbnail as a calm gallery tile */
 export const portfolioIndexThumbShell =
-  "relative overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-900 transition-[transform,border-color,box-shadow] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:border-zinc-700/85 group-hover:scale-[1.006] group-active:scale-[0.992]";
+  "relative overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-900 transition-[border-color,box-shadow] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:border-zinc-700/85";
 export const portfolioIndexThumbAspect = "relative aspect-[4/5] w-full";
-export const portfolioIndexThumbMediaOverlay =
-  "pointer-events-none absolute inset-0 z-[1] bg-black/0 transition-colors duration-[240ms] ease-out group-hover:bg-black/[0.07]";
 
 export const editorialFrame = `group relative block overflow-hidden bg-zinc-900 ${focusRing}`;
 
@@ -123,14 +142,10 @@ export const homeSectionKicker =
 export const homeApproachKicker = `${homeSectionKicker} normal-case`;
 
 /** Home tile images: gemeinsame Basis (Hover separat). */
-export const homeTileImageBase = `object-cover ${defaultImageToneClasses}`;
+export const homeTileImageBase = `object-cover ${defaultImageToneClasses}`.trim();
 
-/**
- * Home landing — nur Zoom (kein Hover-Filter); 800 ms, Kurve wie zuletzt als „genau richtig“.
- * Voller String — Tailwind JIT muss den kompletten String sehen.
- */
-export const homeTileImageHover =
-  "transition-transform duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.014]";
+/** Home landing — no transform hover (GPU stability). */
+export const homeTileImageHover = "";
 
 /** Abstand Bildunterkante → Caption-Stack. */
 export const homeTileCaptionStack = "mt-3 sm:mt-4";

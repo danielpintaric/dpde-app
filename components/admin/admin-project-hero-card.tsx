@@ -11,11 +11,9 @@ import type { AdminProjectListEntry } from "@/types/admin";
 
 type Props = {
   entry: AdminProjectListEntry;
-  /** First featured card only — LCP-friendly fetch without eager-loading every tile. */
-  priority?: boolean;
 };
 
-export function AdminProjectHeroCard({ entry, priority = false }: Props) {
+export function AdminProjectHeroCard({ entry }: Props) {
   const { project, imageCount, coverImage } = entry;
   const href = `/admin/projects/${project.id}/edit`;
   const year = yearHint(project);
@@ -35,8 +33,7 @@ export function AdminProjectHeroCard({ entry, priority = false }: Props) {
               alt=""
               fill
               unoptimized
-              priority={priority}
-              className="object-cover object-center transition-transform duration-300 ease-out group-hover/hero:scale-[1.02]"
+              className="h-full w-full object-cover object-center"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />
           ) : (
@@ -53,7 +50,7 @@ export function AdminProjectHeroCard({ entry, priority = false }: Props) {
           />
           <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-4 sm:p-5 md:p-6">
             <div className="min-w-0">
-              <h2 className="text-balance font-serif text-xl font-semibold tracking-tight text-zinc-50 drop-shadow-sm transition-colors duration-200 group-hover/hero:text-white sm:text-2xl md:text-[1.65rem] md:leading-snug">
+              <h2 className="text-balance font-serif text-xl font-semibold tracking-tight text-zinc-50 transition-colors duration-200 group-hover/hero:text-white sm:text-2xl md:text-[1.65rem] md:leading-snug">
                 {project.title}
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-zinc-400 sm:text-xs">
@@ -77,11 +74,11 @@ export function AdminProjectHeroCard({ entry, priority = false }: Props) {
               </div>
             </div>
             <div className="flex items-center justify-end gap-2 pt-0.5">
-              <span className="rounded-lg border border-zinc-600/45 bg-zinc-950/60 px-2.5 py-1.5 text-[11px] font-medium text-zinc-400 backdrop-blur-sm transition-colors duration-200 group-hover/hero:border-zinc-500/50 group-hover/hero:bg-zinc-900/65 group-hover/hero:text-zinc-200">
+              <span className="rounded-lg border border-zinc-600/45 bg-zinc-950/90 px-2.5 py-1.5 text-[11px] font-medium text-zinc-400 transition-colors duration-200 group-hover/hero:border-zinc-500/50 group-hover/hero:bg-zinc-900/65 group-hover/hero:text-zinc-200">
                 Edit
               </span>
               <span
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-600/40 bg-zinc-950/50 text-zinc-500 backdrop-blur-sm transition-colors duration-200 group-hover/hero:border-zinc-500/50 group-hover/hero:text-zinc-300"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-600/40 bg-zinc-950/90 text-zinc-500 transition-colors duration-200 group-hover/hero:border-zinc-500/50 group-hover/hero:text-zinc-300"
                 aria-hidden
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="opacity-90">

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { isSpecialHref } from "@/lib/href-utils";
 import {
   editorialFrame,
-  editorialImageOverlay,
   homeApproachKicker as approachKickerStyle,
   homeTileImageBase,
   homeTileImageHover,
@@ -76,7 +75,6 @@ export function HomeApproachBlock({
                 sizes="(min-width: 1024px) 42vw, 90vw"
                 loading="lazy"
               />
-              <div className={`${editorialImageOverlay} z-[1]`} aria-hidden />
             </div>
           </div>
         </div>

@@ -41,7 +41,7 @@ export default async function Home() {
         slideIntervalMs={landingHero.heroSlideIntervalMs}
       >
         <div className="mx-auto w-full max-w-7xl">
-          <div className="max-w-lg max-sm:translate-y-[-2vh]">
+          <div className="max-w-lg">
             <h1 className={typeH1Hero}>{landingHero.title}</h1>
             <p className={`mt-4 max-w-md sm:mt-6 ${typeBody}`}>{landingHero.subtitle}</p>
             <p className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-normal tracking-[0.06em] sm:mt-10 sm:gap-x-3 sm:gap-y-1">

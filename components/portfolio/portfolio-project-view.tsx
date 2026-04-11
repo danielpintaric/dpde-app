@@ -1,10 +1,11 @@
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
+import { ClientProjectStickyHeader } from "@/components/client/client-project-sticky-header";
 import { ClientImageActions } from "@/components/gallery/client-image-actions";
-import { EditorialGallery } from "@/components/gallery/editorial-gallery";
+import { PublicPortfolioGallery } from "@/components/gallery/public-portfolio-gallery";
 import { PageMain } from "@/components/site-chrome";
 import {
-  editorialImageOverlay,
   editorialImageTone,
   focusRing,
   linkFocusVisible,
@@ -23,6 +24,12 @@ import {
   type PortfolioProject,
 } from "@/lib/portfolio-data";
 import { resolveProjectImageObjectPosition } from "@/lib/image-object-position";
+
+const ClientSelectionGallery = dynamic(
+  () =>
+    import("@/components/gallery/client-selection-gallery").then((m) => m.ClientSelectionGallery),
+  { ssr: true },
+);
 
 export type PortfolioProjectViewProps = {
   project: PortfolioProject;
@@ -79,30 +86,42 @@ export function PortfolioProjectView({
 
   return (
     <PageMain>
-      <article className="pb-24 pt-28 sm:pb-28 sm:pt-28 lg:pb-32 lg:pt-28">
-        <header className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
-          <p className={typeMeta}>{project.category}</p>
-          <h1 className={`${stackMetaToTitle} ${typeH1Page}`}>{project.title}</h1>
-          <p className={`${stackTitleToBody} max-w-lg sm:max-w-xl ${typeBodyMuted}`}>{project.intro}</p>
-          <p className={`${stackTitleToBody} ${typeMeta}`}>
-            {project.year}
-            <span className="mx-3.5 text-zinc-700">·</span>
-            {project.location}
-          </p>
-        </header>
+      <article
+        className={
+          clientSelectionMode
+            ? "pb-16 pt-0 sm:pb-20 lg:pb-24"
+            : "pb-12 pt-28 sm:pb-16 sm:pt-28 lg:pb-20 lg:pt-28"
+        }
+      >
+        {clientSelectionMode ? <ClientProjectStickyHeader projectTitle={project.title} /> : null}
 
-        <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] mt-14 w-screen max-w-[100vw] sm:mt-16 lg:mt-20">
-          <div className="relative aspect-[16/10] max-h-[min(68vh,720px)] w-full overflow-hidden bg-zinc-900 sm:aspect-[2/1]">
-            <Image
-              src={project.coverImage}
-              alt=""
-              fill
-              className={`${editorialImageTone}`}
-              style={{ objectPosition: coverObjectPosition }}
-              sizes="100vw"
-              priority
-            />
-            <div className={editorialImageOverlay} aria-hidden />
+        {!clientSelectionMode ? (
+          <header className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
+            <p className={typeMeta}>{project.category}</p>
+            <h1 className={`${stackMetaToTitle} ${typeH1Page}`}>{project.title}</h1>
+            <p className={`${stackTitleToBody} max-w-lg sm:max-w-xl ${typeBodyMuted}`}>{project.intro}</p>
+            <p className={`${stackTitleToBody} ${typeMeta}`}>
+              {project.year}
+              <span className="mx-3.5 text-zinc-700">·</span>
+              {project.location}
+            </p>
+          </header>
+        ) : null}
+
+        <div className="mx-auto mt-12 max-w-7xl px-6 sm:mt-14 sm:px-10 lg:mt-16 lg:px-16">
+          <div className="md:pl-4 lg:pl-7">
+            <div
+              className={`relative w-full overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900 shadow-[0_22px_60px_-18px_rgba(0,0,0,0.55)] aspect-[16/9] max-h-[70vh]`}
+            >
+              <Image
+                src={project.coverImage}
+                alt=""
+                fill
+                className={`h-full w-full ${editorialImageTone}`}
+                style={{ objectPosition: coverObjectPosition }}
+                sizes="(max-width: 1280px) calc(100vw - 3rem), 1152px"
+              />
+            </div>
           </div>
         </div>
 
@@ -118,20 +137,28 @@ export function PortfolioProjectView({
           </div>
         ) : null}
 
-        <EditorialGallery
-          images={getPortfolioBodyImages(project)}
-          lightboxImages={getLightboxImages(project)}
-          clientDownload={galleryClientDownload}
-          useClientSelection={clientSelectionMode}
-          galleryTitle={project.title}
-        />
+        {clientSelectionMode ? (
+          <ClientSelectionGallery
+            images={getPortfolioBodyImages(project)}
+            lightboxImages={getLightboxImages(project)}
+            clientDownload={galleryClientDownload}
+            galleryTitle={project.title}
+          />
+        ) : (
+          <PublicPortfolioGallery
+            images={getPortfolioBodyImages(project)}
+            lightboxImages={getLightboxImages(project)}
+            clientDownload={galleryClientDownload}
+            galleryTitle={project.title}
+          />
+        )}
 
-        <footer className="mt-20 border-t border-zinc-800/40 sm:mt-24 lg:mt-28">
+        <footer className="mt-14 border-t border-zinc-800/40 sm:mt-16">
           <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16">
             {next ? (
               <Link
                 href={`${basePath}/${next.slug}${navSuffix}`}
-                className={`group block cursor-pointer py-16 ${transitionQuick} sm:py-20 lg:py-24 ${focusRing} rounded-sm ${tapSoft}`}
+                className={`group block cursor-pointer py-10 sm:py-12 lg:py-14 ${transitionQuick} ${focusRing} rounded-sm ${tapSoft}`}
               >
                 <span className={`${typeMeta} ${transitionColorsQuick} group-hover:text-zinc-400`}>
                   Next project
@@ -142,7 +169,7 @@ export function PortfolioProjectView({
               </Link>
             ) : null}
 
-            <div className="flex flex-col gap-10 border-t border-zinc-800/40 py-12 sm:flex-row sm:items-center sm:justify-between sm:py-14">
+            <div className="flex flex-col gap-8 border-t border-zinc-800/40 py-8 sm:flex-row sm:items-center sm:justify-between sm:gap-9 sm:py-9">
               <Link
                 href={indexHref}
                 className={`text-[11px] font-normal tracking-[0.06em] text-zinc-500 underline decoration-zinc-600/40 underline-offset-[7px] ${transitionQuick} hover:text-zinc-400 hover:decoration-zinc-500/55 ${linkFocusVisible} ${tapSoft}`}

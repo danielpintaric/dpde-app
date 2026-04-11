@@ -169,10 +169,10 @@ export function ProjectImagesUploadDropzone({ projectId, projectSlug }: Props) {
         onDragLeave={onDragLeave}
         onDragOver={onDragOver}
         className={[
-          "relative cursor-pointer rounded-xl border border-dashed px-4 py-12 text-center transition-[border-color,background-color,box-shadow,opacity,transform] duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950",
+          "relative cursor-pointer rounded-xl border border-dashed px-4 py-12 text-center transition-[border-color,background-color,box-shadow,opacity] duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950",
           pending ? "pointer-events-none opacity-70" : "",
           fileDragOver && !pending
-            ? "border-zinc-500/50 bg-zinc-900/50 shadow-[0_0_28px_-10px_rgba(0,0,0,0.5)] scale-[1.01]"
+            ? "border-zinc-500/50 bg-zinc-900/50 shadow-[0_0_28px_-10px_rgba(0,0,0,0.5)]"
             : "border-zinc-700/55 bg-zinc-950/40 hover:border-zinc-600/55 hover:bg-zinc-900/35",
         ].join(" ")}
       >

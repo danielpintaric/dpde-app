@@ -5,12 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import NextImage from "next/image";
 import { useCallback } from "react";
 import { getAdminImagePreviewUrl } from "@/lib/admin/admin-image-preview-url";
-import {
-  galleryGridImage,
-  galleryTileMediaOverlay,
-  linkFocusVisible,
-  portfolioIndexThumbAspect,
-} from "@/lib/editorial";
+import { galleryGridImage, linkFocusVisible, portfolioIndexThumbAspect } from "@/lib/editorial";
 import { resolveImageObjectPosition } from "@/lib/image-object-position";
 import type { Image, Project } from "@/types/project";
 
@@ -98,16 +93,15 @@ function IconGrip({ className }: { className?: string }) {
 
 /** Outer wrapper: lift + shadow (overflow-visible so shadow is not clipped). */
 const adminTileOuter =
-  "rounded-xl transition-[transform,box-shadow] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] " +
+  "rounded-xl transition-[box-shadow] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] " +
   "shadow-[0_4px_18px_rgba(0,0,0,0.12)] " +
-  "hover:scale-[1.015] hover:shadow-[0_10px_30px_rgba(0,0,0,0.25)] " +
-  "active:scale-[0.992] active:transition-[transform] active:duration-[160ms]";
+  "hover:shadow-[0_10px_30px_rgba(0,0,0,0.25)]";
 
 const actionBtn =
   `inline-flex min-h-[44px] min-w-[44px] shrink-0 cursor-pointer items-center justify-center rounded-lg ` +
-  `border border-white/12 bg-zinc-950/75 text-zinc-100 shadow-sm backdrop-blur-sm ` +
-  `transition-[background-color,border-color,transform] duration-200 ease-out ` +
-  `hover:bg-zinc-900/90 active:scale-[0.97] disabled:cursor-wait disabled:opacity-45 ` +
+  `border border-white/12 bg-zinc-950/90 text-zinc-100 shadow-sm ` +
+  `transition-[background-color,border-color] duration-200 ease-out ` +
+  `hover:bg-zinc-900/90 disabled:cursor-wait disabled:opacity-45 ` +
   `${linkFocusVisible}`;
 
 const overlayEase = "ease-[cubic-bezier(0.22,1,0.36,1)]";
@@ -149,11 +143,7 @@ export function ProjectImagesSortableTile({
 
   const transformStr = transform ? CSS.Transform.toString(transform) : null;
   const style: React.CSSProperties = {
-    transform: isDragging
-      ? transformStr
-        ? `${transformStr} scale(1.02)`
-        : "scale(1.02)"
-      : transformStr ?? undefined,
+    transform: transformStr ?? undefined,
     transition: transition ?? undefined,
     zIndex: isDragging ? 40 : undefined,
   };
@@ -167,7 +157,7 @@ export function ProjectImagesSortableTile({
   const outerClass = [
     adminTileOuter,
     "group group/tile relative min-w-0 overflow-visible",
-    isDragging ? "z-10 hover:!scale-100 hover:!shadow-[0_4px_18px_rgba(0,0,0,0.12)]" : "",
+    isDragging ? "z-10" : "",
   ].join(" ");
 
   const innerClass = [
@@ -200,7 +190,7 @@ export function ProjectImagesSortableTile({
             title="Drag to reorder"
             onClick={(e) => e.stopPropagation()}
             className={
-              "absolute left-2 top-2 z-20 flex h-9 w-9 touch-none cursor-grab select-none items-center justify-center rounded-lg border border-zinc-700/50 bg-zinc-950/80 text-zinc-400 shadow-md backdrop-blur-sm transition-colors hover:border-zinc-600 hover:text-zinc-200 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
+              "absolute left-2 top-2 z-20 flex h-9 w-9 touch-none cursor-grab select-none items-center justify-center rounded-lg border border-zinc-700/50 bg-zinc-950/90 text-zinc-400 shadow-md transition-colors hover:border-zinc-600 hover:text-zinc-200 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-40"
             }
           >
             <IconGrip className="opacity-90" />
@@ -225,7 +215,6 @@ export function ProjectImagesSortableTile({
                 className={galleryGridImage}
                 style={{ objectPosition }}
               />
-              <div className={galleryTileMediaOverlay} aria-hidden />
 
               <span className="pointer-events-none absolute right-2 top-11 rounded-md border border-zinc-700/50 bg-zinc-950/90 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-zinc-500">
                 {positionLabel}
@@ -243,7 +232,7 @@ export function ProjectImagesSortableTile({
                 </span>
               ) : null}
 
-              {/* Desktop: overlay opacity 0→1 @ 180ms; actions translate-y 4px→0 */}
+              {/* Desktop: overlay opacity 0→1 @ 180ms */}
               <div
                 className={
                   "absolute inset-0 z-[2] hidden items-center justify-center bg-black/55 opacity-0 " +
@@ -251,13 +240,7 @@ export function ProjectImagesSortableTile({
                   "group-hover/tile:pointer-events-auto group-hover/tile:opacity-100 md:flex"
                 }
               >
-                <div
-                  className={
-                    "flex translate-y-1 flex-wrap items-center justify-center gap-2 px-2 " +
-                    `transition-transform duration-[180ms] ${overlayEase} ` +
-                    "group-hover/tile:translate-y-0"
-                  }
-                >
+                <div className="flex flex-wrap items-center justify-center gap-2 px-2">
                   {!isCover ? (
                     <button
                       type="button"

@@ -61,8 +61,8 @@ export default async function AdminProjectsPage() {
               Featured
             </h2>
             <div className={`grid gap-5 md:gap-6 ${featuredGridClass}`}>
-              {featuredEntries.map((entry, i) => (
-                <AdminProjectHeroCard key={entry.project.id} entry={entry} priority={i === 0} />
+              {featuredEntries.map((entry) => (
+                <AdminProjectHeroCard key={entry.project.id} entry={entry} />
               ))}
             </div>
           </section>
